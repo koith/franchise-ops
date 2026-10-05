@@ -20,6 +20,7 @@ jobs:
         with:
           node-version: 22
       - run: npm test
+      - run: node qa/port-contract.mjs
       - name: Browser interaction QA
         run: |
           npm install --no-save @playwright/test@1.55.0
@@ -27,6 +28,11 @@ jobs:
           mkdir -p artifacts
           python3 -m http.server 4173 >/tmp/franchise-http.log 2>&1 &
           npx playwright test qa/browser.spec.mjs --reporter=line
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-qa
+          path: artifacts
   deploy:
     if: github.event_name == 'push'
     needs: qa

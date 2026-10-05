@@ -1,8 +1,8 @@
 {
   "name": "franchise-ops",
-  "version": "0.1.0",
+  "version": "0.04",
   "private": true,
   "scripts": {
-    "test": "node qa/qa.mjs"
+    "test": "node qa/run-all.mjs"
   }
 }
