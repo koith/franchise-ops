@@ -1,18 +1,1 @@
-import fs from "node:fs";
-const html=fs.readFileSync("index.html","utf8");
-const js=fs.readFileSync("app.js","utf8");
-const css=fs.readFileSync("style.css","utf8");
-const skill=fs.readFileSync("SKILL.md","utf8");
-const checks=[
-  ["viewport",html.includes("width=device-width")],
-  ["module",html.includes('type="module"')],
-  ["version",js.includes('APP_VERSION = "v0.01"')],
-  ["tenant-config",js.includes('id: "gcova"') && js.includes("tenant.stores")],
-  ["store-route",js.includes('qs.get("store")')],
-  ["mobile-two-column",css.includes("repeat(2,minmax(0,1fr))")],
-  ["isolation-contract",skill.includes("attendance-proto") && skill.includes("isolated")]
-];
-let failed=0;
-for(const [name,ok] of checks){console.log((ok?"PASS":"FAIL")+" "+name);if(!ok)failed++;}
-if(failed)process.exit(1);
-console.log("PASS all "+checks.length+" checks");
+import fs from"node:fs";const j=fs.readFileSync("app.js","utf8"),c=fs.readFileSync("style.css","utf8");const q=[["v002",j.includes('v0.02')],["tenant",j.includes('id:"gcova"')],["namespaced-storage",j.includes('"franchise_ops:"+tenant.id')],["dashboard",j.includes("function dashboard")],["punch",j.includes("function pin")&&j.includes("e.working=!e.working")],["attendance",j.includes("function attendance")],["employees",j.includes('active==="employees"')],["pay",j.includes('active==="pay"')],["hours",j.includes('active==="hours"')],["sales",j.includes('active==="sales"')],["inventory",j.includes('active==="inventory"')],["recipe",j.includes("recipe-grid")],["two-col",c.includes("repeat(2,minmax(0,1fr))")],["isolated",!j.includes("waluhdgqhwjjwmflhrle")&&!j.includes("baekeok_store_id")]];let f=0;for(const[x,o]of q){console.log((o?"PASS":"FAIL")+" "+x);if(!o)f++}if(f)process.exit(1);console.log("PASS all "+q.length);
