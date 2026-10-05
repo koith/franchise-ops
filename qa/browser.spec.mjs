@@ -18,7 +18,7 @@ for(const viewport of [{width:393,height:852},{width:1440,height:1000}]){
   await expect(page.locator('#padVeil')).toHaveClass(/show/);
   await page.locator('#padCancel').click();
   await page.locator('#hqHome').click();
-  await expect(page.locator('#view')).toContainText('샘플 강남점');
+  await expect(page.locator('#view')).toContainText('관리자 로그인');
   await page.goto(base+'/?tenant=qa-isolation#pos');
   await expect(page.locator('#empGrid')).toContainText('격리 검증 직원',{timeout:60000});
   await expect(page.locator('#empGrid')).not.toContainText('샘플 직원');
