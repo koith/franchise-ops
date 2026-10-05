@@ -1,70 +1,28 @@
-export const APP_VERSION = "v0.01";
-
-export const tenant = {
-  id: "gcova",
-  name: "지코바 치킨",
-  displayName: "지코바 치킨",
-  regionLabel: "전국",
-  stores: [
-    { id: "gcova-seoul-gangnam", name: "강남점", region: "서울", staff: 8, working: 3, sales: 2840000, status: "정상" },
-    { id: "gcova-seoul-nowon", name: "노원점", region: "서울", staff: 6, working: 2, sales: 1960000, status: "정상" },
-    { id: "gcova-incheon-bupyeong", name: "부평점", region: "인천", staff: 7, working: 4, sales: 2310000, status: "정상" },
-    { id: "gcova-suwon-ingye", name: "수원 인계점", region: "경기", staff: 9, working: 3, sales: 3170000, status: "확인 필요" },
-    { id: "gcova-busan-seomyeon", name: "부산 서면점", region: "부산", staff: 7, working: 2, sales: 2570000, status: "정상" },
-    { id: "gcova-daegu-dongseongro", name: "대구 동성로점", region: "대구", staff: 5, working: 1, sales: 1740000, status: "정상" }
-  ]
-};
-
-const won = value => new Intl.NumberFormat("ko-KR").format(value) + "원";
-const qs = new URLSearchParams(location.search);
-const storeId = qs.get("store");
-const store = tenant.stores.find(item => item.id === storeId);
-
-document.querySelector("#version").textContent = APP_VERSION;
-document.querySelector("#brand").textContent = tenant.displayName;
-
-function renderDashboard() {
-  document.title = tenant.displayName + " 본사 대시보드";
-  const regions = ["전체", ...new Set(tenant.stores.map(s => s.region))];
-  document.querySelector("main").innerHTML = `
-    <section class="hero">
-      <div><p class="eyebrow">HEADQUARTERS</p><h1>본사 대시보드</h1><p>전국 지점의 오늘 운영 현황을 확인합니다.</p></div>
-      <div class="summary"><strong>${tenant.stores.length}</strong><span>운영 지점</span></div>
-    </section>
-    <section class="toolbar">
-      <label>지역<select id="region">${regions.map(r=>`<option>${r}</option>`).join("")}</select></label>
-      <label>지점 검색<input id="search" placeholder="지점명 검색"></label>
-    </section>
-    <section id="stores" class="store-grid"></section>`;
-  const region = document.querySelector("#region");
-  const search = document.querySelector("#search");
-  const draw = () => {
-    const r=region.value, q=search.value.trim();
-    const list=tenant.stores.filter(s=>(r==="전체"||s.region===r)&&(!q||s.name.includes(q)));
-    document.querySelector("#stores").innerHTML=list.map(s=>`
-      <article class="store-card">
-        <header><div><span class="region">${s.region}</span><h2>${s.name}</h2></div><span class="status ${s.status==="정상"?"ok":"warn"}">${s.status}</span></header>
-        <div class="metrics"><div><span>오늘 매출</span><strong>${won(s.sales)}</strong></div><div><span>근무 중</span><strong>${s.working} / ${s.staff}명</strong></div></div>
-        <a class="primary" href="?store=${encodeURIComponent(s.id)}">상세</a>
-      </article>`).join("") || '<p class="empty">조건에 맞는 지점이 없습니다.</p>';
-  };
-  region.addEventListener("change",draw); search.addEventListener("input",draw); draw();
-}
-
-function renderStore() {
-  if (!store) { history.replaceState(null,"",location.pathname); renderDashboard(); return; }
-  document.title = tenant.displayName + " " + store.name;
-  document.querySelector("main").innerHTML = `
-    <a class="back" href="./">← 본사 대시보드</a>
-    <section class="hero store-hero"><div><p class="eyebrow">${tenant.displayName}</p><h1>${store.name}</h1><p>${store.region} · 오늘 운영 현황</p></div><span class="status ${store.status==="정상"?"ok":"warn"}">${store.status}</span></section>
-    <nav class="tabs" aria-label="지점 업무 메뉴">
-      <button class="active">출퇴근</button><button>관리</button><button>급여</button><button>재고</button><button>레시피</button>
-    </nav>
-    <section class="overview">
-      <article><span>재직 직원</span><strong>${store.staff}명</strong></article>
-      <article><span>현재 근무</span><strong>${store.working}명</strong></article>
-      <article><span>오늘 매출</span><strong>${won(store.sales)}</strong></article>
-    </section>
-    <section class="panel"><h2>현재 근무 현황</h2><p>범용판 첫 단계에서는 지점 진입 구조와 테넌트/지점 경계를 먼저 구축했습니다. 직원·근태·급여·재고·레시피 데이터는 별도 범용 백엔드에 연결됩니다.</p></section>`;
-}
-storeId ? renderStore() : renderDashboard();
+export const APP_VERSION="v0.02";
+export const tenant={id:"gcova",name:"지코바 치킨",stores:[{id:"gangnam",name:"강남점",region:"서울"},{id:"nowon",name:"노원점",region:"서울"},{id:"bupyeong",name:"부평점",region:"인천"},{id:"ingye",name:"수원 인계점",region:"경기"},{id:"seomyeon",name:"부산 서면점",region:"부산"},{id:"dongseong",name:"대구 동성로점",region:"대구"}]};
+const names=["김민준","이서연","박지훈","최유진","정현우","한지민","오세훈","윤수아"];
+const seedStore=(s,si)=>({employees:names.slice(0,5+(si%4)).map((n,i)=>({id:i+1,name:n,pin:"1234",working:i<2,at:i<2?["09:12","10:03"][i]:null,wage:10320,hours:36+i*4})),hours:{open:"11:00",close:"24:00"},sales:1850000+si*213000,inventory:[["순살 닭고기",34,"kg",20],["양념소스",18,"kg",12],["치킨무",42,"팩",30],["콜라 1.25L",16,"병",20]],recipes:[["순살양념구이","순살 닭고기 600g · 양념소스 180g"],["소금구이","순살 닭고기 600g · 소금구이 시즈닝 14g"],["떡사리","떡 180g · 양념소스 35g"]]});
+const KEY=t=>"franchise_ops:"+tenant.id+":"+t;
+function load(){let x;try{x=JSON.parse(localStorage.getItem(KEY("data")))}catch{};if(!x){x={stores:Object.fromEntries(tenant.stores.map((s,i)=>[s.id,seedStore(s,i)]))};save(x)}return x}
+function save(x){localStorage.setItem(KEY("data"),JSON.stringify(x))}
+const qs=new URLSearchParams(location.search);let storeId=qs.get("store");let tab=location.hash.slice(1)||"pos";
+const won=n=>Number(n||0).toLocaleString("ko-KR")+"원",esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const brand=document.querySelector("#brandName"),storeName=document.querySelector("#lockedStoreName"),storeCrumb=document.querySelector("#storeCrumb"),nav=document.querySelector("#storeTabs"),view=document.querySelector("#view");
+brand.textContent=tenant.name;document.querySelector("#appVersion").textContent=APP_VERSION;
+document.querySelector("#hqHome").onclick=()=>{history.pushState(null,"",location.pathname+"#dashboard");storeId=null;route()};
+function store(){return tenant.stores.find(s=>s.id===storeId)} function state(){return load().stores[storeId]}
+function setRoute(id,t="pos"){storeId=id;tab=t;history.pushState(null,"","?store="+encodeURIComponent(id)+"#"+t);route()}
+function syncHeader(){const s=store();storeName.textContent=s?.name||"";storeName.style.display=s?"inline":"none";storeCrumb.style.display=s?"inline":"none";nav.style.display=s?"flex":"none"}
+function dashboard(){syncHeader();const d=load();const cards=tenant.stores.map((s,i)=>{const x=d.stores[s.id],working=x.employees.filter(e=>e.working).length;return '<article class="hq-store-panel" data-id="'+s.id+'"><div class="hq-store-head"><div><small>#'+(i+1)+' · '+esc(s.region)+'</small><b>'+esc(s.name)+'</b></div><button>상세 ›</button></div><div class="hq-store-kpi"><b>'+won(x.sales)+'</b><span>오늘 매출</span></div><div class="hq-summary-mini"><span>직원 '+x.employees.length+'명</span><span>근무중 '+working+'명</span></div><div class="hq-bars">'+[42,68,53,82,74,91,64,77,55,86,70,94,79,88].map((v,j)=>'<i style="height:'+v+'px"><span>'+(j+1)+'</span></i>').join("")+'</div></article>'}).join("");view.innerHTML='<div class="hq-dashboard"><div class="hq-title-row"><h2>지점 현황</h2></div><div class="hq-summary"><div><span>운영 지점</span><b>'+tenant.stores.length+'개</b></div><div><span>오늘 전체 매출</span><b>'+won(Object.values(d.stores).reduce((a,x)=>a+x.sales,0))+'</b></div></div><div class="hq-grid">'+cards+'</div></div>';view.querySelectorAll(".hq-store-panel button").forEach(b=>b.onclick=()=>setRoute(b.closest("article").dataset.id))}
+function pos(){const x=state();view.innerHTML='<div class="page-title-row"><h2 class="page-title">출퇴근</h2><span class="page-title-meta">총 '+x.employees.length+'명</span></div><div id="empGrid" class="grid">'+x.employees.map(e=>'<button class="emp '+(e.working?"working":"")+'" data-id="'+e.id+'"><div class="employee-card-primary"><span><b>'+esc(e.name)+'</b><small>(No.'+e.id+')</small></span><em class="'+(e.working?"badge-on":"badge-off")+'">'+(e.working?"근무중":"출근 전")+'</em></div><div class="employee-card-secondary">'+(e.working?'<b>출근 '+e.at+'</b><span>근무 중</span>':"출근 기록 없음")+'</div></button>').join("")+'</div><div id="pin" class="modal-veil"></div>';view.querySelectorAll(".emp").forEach(c=>c.onclick=()=>pin(Number(c.dataset.id)))}
+function pin(id){const data=load(),x=data.stores[storeId],e=x.employees.find(e=>e.id===id),m=document.querySelector("#pin");m.className="modal-veil show";m.innerHTML='<div class="pad"><h3>'+esc(e.name)+' · 비밀번호</h3><input id="pinInput" inputmode="numeric" maxlength="4" placeholder="4자리" autofocus><button class="btn btn-primary" id="pinGo">'+(e.working?"퇴근":"출근")+'</button><button class="btn" id="pinCancel">취소</button></div>';m.querySelector("#pinCancel").onclick=()=>m.className="modal-veil";m.querySelector("#pinGo").onclick=()=>{if(m.querySelector("#pinInput").value!==e.pin){alert("비밀번호가 올바르지 않습니다.");return}e.working=!e.working;e.at=e.working?new Date().toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit",hour12:false}):null;save(data);pos()}}
+function attendance(){const x=state();view.innerHTML='<div class="page-title-row"><h2 class="page-title">근무현황</h2></div><div class="calendar"><div class="cal-head">2026년 10월</div><div class="cal-grid">'+Array.from({length:31},(_,i)=>'<div><b>'+(i+1)+'</b><i class="'+(i%3===0?"dot":"")+'"></i></div>').join("")+'</div></div><div class="section-title">오늘 근무</div><div class="grid">'+x.employees.map(e=>'<article class="att-card"><div class="employee-card-primary"><b>'+e.name+'</b><span class="'+(e.working?"badge-on":"badge-off")+'">'+(e.working?"근무중":"비근무중")+'</span></div><div>'+(e.working?"출근 "+e.at:"오늘 근무 기록 확인")+'</div></article>').join("")+'</div>'}
+function admin(active="employees"){const data=load(),x=data.stores[storeId];const tabs=[["employees","직원"],["pay","급여"],["hours","운영시간"],["sales","매출·매입"],["inventory","재고"],["recipe","레시피"]];view.innerHTML='<div class="tabs admin-subtabs">'+tabs.map(([k,n])=>'<button class="'+(active===k?"on":"")+'" data-a="'+k+'">'+n+'</button>').join("")+'</div><div id="adminBody"></div>';view.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>admin(b.dataset.a));const body=document.querySelector("#adminBody");
+if(active==="employees"){body.innerHTML='<div class="page-title-row"><h2 class="page-title">직원 관리</h2><button class="btn btn-primary" id="addEmp">+ 직원</button></div><div class="grid">'+x.employees.map(e=>'<article class="att-card"><div class="employee-card-primary"><b>'+e.name+'</b><span class="badge-off">No.'+e.id+'</span></div><div>시급 '+won(e.wage)+'</div></article>').join("")+'</div>';body.querySelector("#addEmp").onclick=()=>{const n=prompt("직원 이름");if(!n)return;x.employees.push({id:Math.max(0,...x.employees.map(e=>e.id))+1,name:n,pin:"1234",working:false,at:null,wage:10320,hours:0});save(data);admin("employees")}}
+else if(active==="pay"){body.innerHTML='<div class="page-title-row"><h2 class="page-title">급여</h2></div><div class="grid">'+x.employees.map(e=>'<article class="pay-card"><div class="employee-card-primary"><b>'+e.name+'</b><span class="badge-off">예상</span></div><div><small>총근무</small><b>'+e.hours+'시간</b></div><div><small>예상 기본급</small><strong>'+won(Math.round(e.hours*e.wage))+'</strong></div></article>').join("")+'</div>'}
+else if(active==="hours"){body.innerHTML='<div class="page-title-row"><h2 class="page-title">운영시간</h2></div><div class="panel"><label>오픈 <input id="open" type="time" value="'+x.hours.open+'"></label><label>마감 <input id="close" type="time" value="'+(x.hours.close==="24:00"?"00:00":x.hours.close)+'"></label><button class="btn btn-primary" id="saveHours">저장</button></div>';body.querySelector("#saveHours").onclick=()=>{x.hours.open=body.querySelector("#open").value;x.hours.close=body.querySelector("#close").value;save(data);alert("운영시간을 저장했습니다.")}}
+else if(active==="sales"){body.innerHTML='<div class="page-title-row"><h2 class="page-title">매출·매입</h2></div><div class="ops-kpis"><div><span>오늘 매출</span><b>'+won(x.sales)+'</b></div><div><span>예상 매입</span><b>'+won(Math.round(x.sales*.31))+'</b></div></div><div class="panel"><button class="btn" id="plusSales">테스트 매출 +10,000원</button></div>';body.querySelector("#plusSales").onclick=()=>{x.sales+=10000;save(data);admin("sales")}}
+else if(active==="inventory"){body.innerHTML='<div class="page-title-row"><h2 class="page-title">재고</h2></div><div class="inventory-list">'+x.inventory.map((r,i)=>'<article><div><b>'+r[0]+'</b><small>적정 '+r[3]+r[2]+'</small></div><strong>'+r[1]+r[2]+'</strong><button data-inv="'+i+'">-1</button></article>').join("")+'</div>';body.querySelectorAll("[data-inv]").forEach(b=>b.onclick=()=>{x.inventory[+b.dataset.inv][1]=Math.max(0,x.inventory[+b.dataset.inv][1]-1);save(data);admin("inventory")})}
+else {body.innerHTML='<div class="page-title-row"><h2 class="page-title">레시피</h2></div><div class="recipe-grid">'+x.recipes.map(r=>'<article><div class="recipe-thumb">🍗</div><b>'+r[0]+'</b><p>'+r[1]+'</p></article>').join("")+'</div>'}}
+function route(){tab=location.hash.slice(1)||tab;if(!storeId||tab==="dashboard"){storeId=null;dashboard();return}syncHeader();if(tab==="pos")pos();else if(tab==="attendance")attendance();else if(tab==="recipe")admin("recipe");else admin("employees")}
+window.addEventListener("popstate",()=>{storeId=new URLSearchParams(location.search).get("store");route()});window.addEventListener("hashchange",()=>{tab=location.hash.slice(1);route()});route();
