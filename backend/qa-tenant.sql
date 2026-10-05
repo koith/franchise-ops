@@ -9,6 +9,7 @@ DO $$
 DECLARE st bigint; emp bigint; response jsonb;
 BEGIN
  SELECT min(id) INTO st FROM tenant_qa.stores;
+ PERFORM set_config('request.headers',jsonb_build_object('x-tenant-id','qa-isolation','x-store-id',st::text)::text,true);
  response:=public.admin_create_employee_for_store('QA 신규 직원','1234',st);
  IF jsonb_typeof(response)<>'number' THEN RAISE EXCEPTION 'create failed %',response; END IF;
  SELECT id INTO emp FROM tenant_qa.employees WHERE name='QA 신규 직원';

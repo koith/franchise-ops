@@ -24,7 +24,7 @@ const rawFetch=window.fetch.bind(window);
 window.fetch=function(input,init){
  const u=new URL(typeof input==='string'?input:input.url,location.href);
  if(u.hostname.endsWith('.supabase.co')&&u.origin!==url)throw Error('CROSS_PROJECT_REQUEST_BLOCKED');
- if(u.origin===url){const h=new Headers(init?.headers||(input instanceof Request?input.headers:{}));h.set('x-tenant-id',tenant);init={...init,headers:h};}
+ if(u.origin===url){const h=new Headers(init?.headers||(input instanceof Request?input.headers:{}));h.set('x-tenant-id',tenant);if(Number(store()))h.set('x-store-id',String(store()));init={...init,headers:h};}
  return rawFetch(input,init);
 };
 window.TENANT_READY=rawFetch(url+'/rest/v1/rpc/tenant_config',{method:'POST',headers:{apikey:apiKey,'Content-Type':'application/json'},body:JSON.stringify({p_slug:tenant})}).then(async r=>{if(!r.ok)throw Error('TENANT_CONFIG_FAILED');const cfg=await r.json();if(!cfg)throw Error('TENANT_NOT_FOUND');window.TENANT_CONFIG=Object.freeze(cfg);return cfg;});
