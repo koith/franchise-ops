@@ -1058,9 +1058,9 @@ const SupaBE = (()=>{
       const d=await r.json();
       return CONFIG.SUPABASE_URL + "/storage/v1" + d.signedURL;  // signedURL은 상대경로
     },
-    async storeSettingsGet(){ return rpc("admin_store_settings_get",{p_store_id:CURRENT_STORE_ID||1},true); },
-    async storeSettingsSet(openMin,closeMin){ return rpc("admin_store_settings_set",{p_open_minute:openMin,p_close_minute:closeMin,p_close_grace_minutes:0,p_store_id:CURRENT_STORE_ID||1},true); },
-    async enforceStoreClose(){ return rpc(["system","enforce","store","close"].join("_"),{p_store_id:CURRENT_STORE_ID||1},true); },
+    async storeSettingsGet(){ return rpc("admin_store_settings_get",{p_store_id:CURRENT_STORE_ID||0},true); },
+    async storeSettingsSet(openMin,closeMin){ return rpc("admin_store_settings_set",{p_open_minute:openMin,p_close_minute:closeMin,p_close_grace_minutes:0,p_store_id:CURRENT_STORE_ID||0},true); },
+    async enforceStoreClose(){ return rpc(["system","enforce","store","close"].join("_"),{p_store_id:CURRENT_STORE_ID||0},true); },
     async listAdmins(){ return rpc("admin_list_admins",{},true); },
     async listAuthUsers(){ return rpc("admin_list_auth_users",{},true); },
     async grantAdmin(email){ return rpc("admin_grant",{p_email:email},true); },
@@ -1083,11 +1083,11 @@ const SupaBE = (()=>{
     async eventsWithCorrections(fromIso,toIso){ return rpc("admin_events_with_corrections",{p_from:fromIso,p_to:toIso},true); },
     // --- M5: 급여기간 ---
     async payrollPeriod(ym){ return rpc("admin_payroll_period",{p_ym:ym},true); },
-    async payrollContracts(ym){ return rpc("admin_store_payroll_contracts_v2",{p_store_id:CURRENT_STORE_ID||1,p_month:ym+"-01"},true); },
-    async payrollContractWorkdays(ym){ return rpc("admin_store_payroll_contract_workdays",{p_store_id:CURRENT_STORE_ID||1,p_month:ym+"-01"},true); },
-    async payrollSubstitutions(ym){ return rpc("admin_payroll_substitutions",{p_store_id:CURRENT_STORE_ID||1,p_ym:ym},true); },
-    async payrollBreakDecisions(fromIso,toIso){ return rpc("admin_attendance_break_decisions",{p_store_id:CURRENT_STORE_ID||1,p_from:fromIso,p_to:toIso},true); },
-    async payrollBreakDecisionSave(empId,inEventId,provided,compensate){ return rpc("admin_attendance_break_decision_save",{p_store_id:CURRENT_STORE_ID||1,p_employee_id:empId,p_in_event_id:inEventId,p_break_provided:provided,p_compensate_30m:compensate},true); },
+    async payrollContracts(ym){ return rpc("admin_store_payroll_contracts_v2",{p_store_id:CURRENT_STORE_ID||0,p_month:ym+"-01"},true); },
+    async payrollContractWorkdays(ym){ return rpc("admin_store_payroll_contract_workdays",{p_store_id:CURRENT_STORE_ID||0,p_month:ym+"-01"},true); },
+    async payrollSubstitutions(ym){ return rpc("admin_payroll_substitutions",{p_store_id:CURRENT_STORE_ID||0,p_ym:ym},true); },
+    async payrollBreakDecisions(fromIso,toIso){ return rpc("admin_attendance_break_decisions",{p_store_id:CURRENT_STORE_ID||0,p_from:fromIso,p_to:toIso},true); },
+    async payrollBreakDecisionSave(empId,inEventId,provided,compensate){ return rpc("admin_attendance_break_decision_save",{p_store_id:CURRENT_STORE_ID||0,p_employee_id:empId,p_in_event_id:inEventId,p_break_provided:provided,p_compensate_30m:compensate},true); },
     async setPeriodWeeks(ym,weeks){ return rpc("admin_set_period_weeks",{p_ym:ym,p_weeks:weeks},true); },
     async setPeriodEmployee(ym,empId,fields){ return rpc("admin_set_period_employee",{p_ym:ym,p_employee_id:empId,p_fields:fields},true); },
     // --- M8: 마감/스냅샷 ---
@@ -1113,11 +1113,11 @@ const SupaBE = (()=>{
     async operationsTrend(windowKey){ return rpc("admin_operations_trend",{p_window:windowKey},true); },
     async inventoryOverview(){ return rpc("admin_inventory_overview_v3",{},true); },
     async inventoryUnitConfigSave(itemId,stockUnit,orderUnit,conversionQuantity){ return rpc("admin_inventory_unit_config_save",{p_item_id:Number(itemId),p_stock_unit:stockUnit,p_order_unit:orderUnit,p_conversion_quantity:Number(conversionQuantity)},true); },
-    async inventoryPurchaseOrders(){ return rpc("admin_inventory_purchase_order_list",{p_store_id:CURRENT_STORE_ID||1,p_open_only:true},true); },
-    async inventoryPurchaseOrder(row,quantity,note){ return rpc("admin_inventory_purchase_order_create",{p_store_id:CURRENT_STORE_ID||1,p_item_id:row.manual?null:(row.source_item_id||row.id||null),p_manual_item_id:row.manual?row.id:null,p_quantity:Number(quantity),p_note:note||null},true); },
+    async inventoryPurchaseOrders(){ return rpc("admin_inventory_purchase_order_list",{p_store_id:CURRENT_STORE_ID||0,p_open_only:true},true); },
+    async inventoryPurchaseOrder(row,quantity,note){ return rpc("admin_inventory_purchase_order_create",{p_store_id:CURRENT_STORE_ID||0,p_item_id:row.manual?null:(row.source_item_id||row.id||null),p_manual_item_id:row.manual?row.id:null,p_quantity:Number(quantity),p_note:note||null},true); },
     async inventoryReceive(orderId,quantity){ return rpc("admin_inventory_purchase_receive",{p_order_id:Number(orderId),p_quantity:Number(quantity)},true); },
-    async inventoryManualList(){ return rpc("admin_inventory_manual_list",{p_store_id:CURRENT_STORE_ID||1},true); },
-    async inventoryManualSave(id,name,sku,category,unit,onHand,targetLevel,reorderPoint,thumbnailUrl,sourceItemId=null){ return rpc("admin_inventory_manual_save_v2",{p_id:id||null,p_store_id:CURRENT_STORE_ID||1,p_name:name,p_sku:sku||null,p_category:category||null,p_unit:unit||"ea",p_on_hand:Number(onHand||0),p_target_level:Number(targetLevel||0),p_reorder_point:Number(reorderPoint||0),p_thumbnail_url:thumbnailUrl||null,p_source_item_id:sourceItemId||null},true); },
+    async inventoryManualList(){ return rpc("admin_inventory_manual_list",{p_store_id:CURRENT_STORE_ID||0},true); },
+    async inventoryManualSave(id,name,sku,category,unit,onHand,targetLevel,reorderPoint,thumbnailUrl,sourceItemId=null){ return rpc("admin_inventory_manual_save_v2",{p_id:id||null,p_store_id:CURRENT_STORE_ID||0,p_name:name,p_sku:sku||null,p_category:category||null,p_unit:unit||"ea",p_on_hand:Number(onHand||0),p_target_level:Number(targetLevel||0),p_reorder_point:Number(reorderPoint||0),p_thumbnail_url:thumbnailUrl||null,p_source_item_id:sourceItemId||null},true); },
     async inventoryMovements(itemId,from,to){ return rpc("admin_inventory_movements",{p_item_id:itemId||null,p_from:from||null,p_to:to||null},true); },
     async recipeList(){ return rpc("admin_recipe_list_v2",{},true); },
     async recipeSave(id,name,category,components,thumbnailUrl){ return rpc("admin_recipe_save",{p_recipe_id:id||null,p_menu_name:name,p_category:category||null,p_components:components||[],p_thumbnail_url:thumbnailUrl||null},true); },
@@ -1134,12 +1134,12 @@ const SupaBE = (()=>{
     async operationsChannels(from,to){ return rpc("admin_operations_channels",{p_from:from,p_to:to},true); },
     async inventoryItems(){ return rpc("admin_inventory_items",{},true); },
     async adminContext(){ return rpc("admin_context",{},true); },
-    async storeRecipeList(storeId){ return rpc("admin_store_recipe_list",{p_store_id:storeId||CURRENT_STORE_ID||1},true); },
-    async publicStoreRecipeList(storeId){ return publicRpc("store_recipe_list_public",{p_store_id:storeId||CURRENT_STORE_ID||1}); },
-    async staffRecipeList(employeeId,pin,storeId){ return rpc("staff_recipe_list",{p_employee_id:employeeId,p_pin:pin,p_store_id:storeId||CURRENT_STORE_ID||1}); },
-    async storeRecipeOverrideSave(storeId,menuKey,name,category,components,thumbnailUrl,instructions){ return rpc("admin_store_recipe_override_save",{p_store_id:storeId||CURRENT_STORE_ID||1,p_menu_key:menuKey,p_menu_name:name||null,p_category:category||null,p_components:components||[],p_thumbnail_url:thumbnailUrl||null,p_instructions:instructions||[]},true); },
-    async storeRecipeOverrideClear(storeId,menuKey){ return rpc("admin_store_recipe_override_clear",{p_store_id:storeId||CURRENT_STORE_ID||1,p_menu_key:menuKey},true); },
-    async storeProductRetirementFinalize(storeId,productId){ return rpc("admin_store_product_retirement_finalize",{p_store_id:storeId||CURRENT_STORE_ID||1,p_product_id:productId},true); },
+    async storeRecipeList(storeId){ return rpc("admin_store_recipe_list",{p_store_id:storeId||CURRENT_STORE_ID||0},true); },
+    async publicStoreRecipeList(storeId){ return publicRpc("store_recipe_list_public",{p_store_id:storeId||CURRENT_STORE_ID||0}); },
+    async staffRecipeList(employeeId,pin,storeId){ return rpc("staff_recipe_list",{p_employee_id:employeeId,p_pin:pin,p_store_id:storeId||CURRENT_STORE_ID||0}); },
+    async storeRecipeOverrideSave(storeId,menuKey,name,category,components,thumbnailUrl,instructions){ return rpc("admin_store_recipe_override_save",{p_store_id:storeId||CURRENT_STORE_ID||0,p_menu_key:menuKey,p_menu_name:name||null,p_category:category||null,p_components:components||[],p_thumbnail_url:thumbnailUrl||null,p_instructions:instructions||[]},true); },
+    async storeRecipeOverrideClear(storeId,menuKey){ return rpc("admin_store_recipe_override_clear",{p_store_id:storeId||CURRENT_STORE_ID||0,p_menu_key:menuKey},true); },
+    async storeProductRetirementFinalize(storeId,productId){ return rpc("admin_store_product_retirement_finalize",{p_store_id:storeId||CURRENT_STORE_ID||0,p_product_id:productId},true); },
     async operationsImports(){ return rpc("admin_operations_imports",{},true); },
     async operationsImportStage(source,fileName,rows){ return rpc("admin_operations_import_stage",{p_source:source,p_file_name:fileName,p_rows:rows},true); },
     async operationsCollectRequest(source){ return rpc("admin_operations_collect_request",{p_source:source},true); },
@@ -1396,16 +1396,13 @@ function setTab(t){
   document.getElementById("tabAdmin").classList.toggle("on",["admin","pay","hours","report","sales","inventory"].includes(t));
 }
 function isHiddenInhaTestEmployee(e){
-  if(Number(CURRENT_STORE_ID)!==1||!e)return false;
+  if(!e)return false;
   const memo=String(e.memo||"").trim();
   const name=String(e.name||"").trim().toLowerCase();
   return memo==="데모 지점 직원"||memo.includes("테스트")||name.startsWith("test")||name.startsWith("테스트");
 }
 function adminSubnav(active){
-  // 미완성 운영 기능은 현재 지점에서만 개발/검증하고 다른 지점에는 노출하지 않는다.
-  const tabs=Number(CURRENT_STORE_ID)===1
-    ? [["report","리포트"],["admin","직원 관리"],["pay","급여"],["hours","운영시간"],["sales","매출·매입"],["inventory","재고"]]
-    : [["admin","직원 관리"],["pay","급여"],["hours","운영시간"]];
+  const tabs=[["report","리포트"],["admin","직원 관리"],["pay","급여"],["hours","운영시간"],["sales","매출·매입"],["inventory","재고"]];
   const accountIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>';
   return '<div class="admin-subnav-shell"><div class="tabs admin-subtabs admin-subtabs-wide">'+tabs.map(([k,n])=>'<a href="#'+k+'" class="'+(active===k?"on":"")+'">'+n+'</a>').join("")+'</div><button type="button" class="admin-account-trigger" id="adminAccountTrigger" aria-label="관리자 계정 메뉴" aria-haspopup="true" aria-expanded="false">'+accountIcon+'</button><div class="admin-account-popover" id="adminAccountPopover" role="menu" hidden><div class="admin-account-label">로그인 계정</div><div class="admin-account-email" id="adminAccountEmail">불러오는 중…</div><div class="admin-account-actions"><button type="button" class="btn btn-secondary" id="adminAccountSettings">설정</button><button type="button" class="btn btn-secondary" id="adminAccountLogout">로그아웃</button></div></div></div>';
 }
@@ -1464,7 +1461,6 @@ function route(){
   }
   else if(h==="attendance"){ setTab("attendance"); if(!LIVE){ location.href="actual_attendance.html"; return; } sessionStorage.removeItem("staff_attendance_auth"); if(Auth.isLoggedIn()){ BE.isAdmin().then(isAdmin=>{ if(isAdmin) location.href="actual_attendance.html"; else openMyRecord(); }).catch(()=>openMyRecord()); return; } openMyRecord(); }
   else if(h==="pay"){ setTab("pay"); requireAuth(async()=>{await renderPay();await mountAdminSubnav("pay");}); }
-  else if(["report","sales","inventory","ops"].includes(h)&&Number(CURRENT_STORE_ID)!==1){location.hash="#admin";return;}
   else if(h==="report"){ setTab("report"); requireAuth(async()=>{await renderOperations("dashboard");await mountAdminSubnav("report");}); } else if(h==="sales"){ setTab("sales"); requireAuth(async()=>{await renderOperations("inquiry");await mountAdminSubnav("sales");}); } else if(h==="inventory"){ setTab("inventory"); requireAuth(async()=>{await renderOperations("inventory");await mountAdminSubnav("inventory");}); } else if(h==="recipe"){ setTab("recipe"); renderRecipeHub(); } else if(h==="products"){location.hash="#dashboard";return;} else if(h==="ops"){ setTab("report"); requireAuth(async()=>{await renderOperations("dashboard");await mountAdminSubnav("report");}); }
   else if(h==="hours"){ setTab("hours"); requireAuth(async()=>{await renderStoreHours();upgradeLegacyPageTitle(".store-hours-page>.section-t","운영시간");await mountAdminSubnav("hours");}); }
   else{ setTab("pos"); renderPos(); }
@@ -2662,7 +2658,7 @@ async function buildSheetSyncPayload(ym){
   }
   const humanPayroll=payRows.map(r=>[r[0],r[1],r[2],r[3],r[4],r[5],r[6],r[9],r[10],r[11],r[12]]);
   return {
-    store_key:String(CURRENT_STORE_ID||1),
+    store_key:String(CURRENT_STORE_ID||0),
     store_name:STORE_NAME_BY_ID.get(Number(CURRENT_STORE_ID))||CONFIG.STORE_NAME,
     attendance:{ header:["날짜","직원명","출근","퇴근","실근무","상태","정정"], rows:humanAttendance },
     sessions:{ header:[], rows:[] },
