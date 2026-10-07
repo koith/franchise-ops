@@ -1184,7 +1184,7 @@ function syncStoreContextUI(){
   if(sel){sel.classList.toggle("store-context-selector-hidden",!showSelector);sel.hidden=!showSelector;}
   if(shell){shell.classList.toggle("store-context-selector-hidden",!showSelector);shell.hidden=!showSelector;}
   if(crumb){crumb.classList.toggle("store-context-selector-hidden",dashboard);crumb.hidden=dashboard;}
-  if(lockedName){const name=STORE_NAME_BY_ID.get(Number(CURRENT_STORE_ID))||sessionStorage.getItem("franchise_store_name")||sel?.selectedOptions?.[0]?.text||"현재 지점";lockedName.textContent=name;lockedName.classList.toggle("show",STORE_ENTRY_LOCK&&!dashboard);lockedName.hidden=!(STORE_ENTRY_LOCK&&!dashboard);}
+  if(lockedName){const name=STORE_NAME_BY_ID.get(Number(CURRENT_STORE_ID))||sessionStorage.getItem("franchise_store_name")||sel?.selectedOptions?.[0]?.text||"현재 지점";lockedName.textContent=name;lockedName.classList.toggle("show",!dashboard);lockedName.hidden=dashboard;}
   if(tabs)tabs.style.display=dashboard?"none":"";
   if(home){home.disabled=STORE_ENTRY_LOCK;home.style.cursor=STORE_ENTRY_LOCK?"default":"pointer";home.setAttribute("aria-label",STORE_ENTRY_LOCK?"프랜차이즈":"본사 대시보드");home.title=STORE_ENTRY_LOCK?"":"본사 대시보드";}
   if(STORE_ENTRY_LOCK&&dashboard)location.hash="#pos";

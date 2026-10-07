@@ -78,6 +78,8 @@ function inventoryCard(row){
   }
   return '<article class="ops-stock-bar ops-stock-reference state-reference">'+title+'<span class="ops-stock-info-btn reference">기준 재고</span><div class="ops-stock-level reference"><i><em style="width:65%"></em></i></div><div class="ops-stock-footer ops-stock-reference-footer"><span><b>'+esc(row.current_text||"-")+'</b><small>현재 기준</small></span><span><b>'+esc(row.minimum_text||"-")+'</b><small>발주 기준</small></span></div><div class="ops-stock-reference-order"><span>주문</span><b>'+esc(row.order_text||"-")+'</b></div>'+(row.note?'<p>'+esc(row.note)+'</p>':"")+(expiry?'<small class="ops-stock-expiry">'+esc(expiry)+'</small>':"")+'</article>';
 }
+function openInventoryEditor(item=null){return window.openInventoryEntry("manual",item,()=>renderInventory());}
+function openInventoryBulk(){return window.openInventoryEntry("bulk",null,()=>renderInventory());}
 async function renderInventory(refresh=false){
   const body=refresh?document.getElementById("opsBody"):shell("재고","발주 필요 품목과 현재 지점 재고 기준을 한 화면에서 관리합니다.");
   if(typeof window.mountAdminSubnav==="function") await window.mountAdminSubnav("inventory");

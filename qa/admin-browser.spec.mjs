@@ -28,7 +28,20 @@ test('authenticated original administrator workflows on isolated tenant',async({
    }
    if(route==='report')await expect(page.locator('.ops-kpis')).toBeVisible({timeout:30000});
    if(route==='sales')await expect(page.locator('#opsType')).toBeVisible({timeout:30000});
-   if(route==='inventory')await expect(page.locator('#opsInventoryAdd')).toBeVisible({timeout:30000});
+   if(route==='inventory'){
+    await expect(page.locator('#opsInventoryAdd')).toBeVisible({timeout:30000});
+    if(width===393){
+     await page.locator('#opsInventoryAdd').click();
+     await page.locator('#inventoryName').fill('CI 검증 품목');
+     await page.locator('#inventorySku').fill('QA-'+account.user_id);
+     await page.locator('#inventoryOnHand').fill('7');
+     await page.locator('#inventoryTarget').fill('10');
+     await page.locator('#inventoryReorder').fill('3');
+     await page.locator('#inventorySave').click();
+     await expect(page.locator('#inventorySave')).toHaveCount(0,{timeout:20000});
+    }
+    await expect(page.locator('#opsBody')).toContainText('CI 검증 품목',{timeout:20000});
+   }
    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();
    await page.screenshot({path:`artifacts/admin-${route}-${width}.png`,fullPage:true});
   }

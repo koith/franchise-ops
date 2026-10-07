@@ -13,3 +13,4 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.ci_qa_membership(uuid,boolean) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.ci_qa_membership(uuid,boolean) TO service_role;
+
