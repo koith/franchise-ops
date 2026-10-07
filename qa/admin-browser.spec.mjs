@@ -51,6 +51,18 @@ test('authenticated original administrator workflows on isolated tenant',async({
    await page.waitForLoadState('networkidle',{timeout:30000});
    await expect(page.locator('body')).not.toBeEmpty();
    await expect(page.locator('body')).not.toContainText('TENANT_NOT_FOUND');
+   await expect(page.locator('body')).not.toContainText('화면을 불러오지 못했습니다');
+   if(name==='substitution'){
+    await expect(page.locator('#me')).toContainText('격리 검증 직원');
+    await page.locator('#pin').fill('8642');await page.locator('#login').click();
+    await expect(page.locator('#new')).toBeVisible({timeout:15000});
+   }
+   if(name==='employment_contracts'){
+    const employee=page.locator('select').first();
+    const option=await employee.locator('option').filter({hasText:'격리 검증 직원'}).getAttribute('value');
+    await employee.selectOption(option);
+    await page.waitForLoadState('networkidle');
+   }
    await page.screenshot({path:`artifacts/module-${name}.png`,fullPage:true});
   }
   expect(errors).toEqual([]);

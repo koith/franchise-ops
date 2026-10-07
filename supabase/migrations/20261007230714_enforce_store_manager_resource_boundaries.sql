@@ -1,3 +1,21 @@
+CREATE OR REPLACE FUNCTION public.assert_resource_access(p_kind text,p_id bigint) RETURNS void LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$
+DECLARE s name; st bigint; q text;
+BEGIN
+ IF p_id IS NULL THEN RETURN; END IF;
+ s:=public.current_tenant_schema();
+ q:=CASE p_kind
+ WHEN 'employee' THEN 'SELECT store_id FROM %1$I.employees WHERE id=$1'
+ WHEN 'period' THEN 'SELECT e.store_id FROM %1$I.employment_periods r JOIN %1$I.employees e ON e.id=r.employee_id WHERE r.id=$1'
+ WHEN 'contract' THEN 'SELECT e.store_id FROM %1$I.employment_contracts r JOIN %1$I.employment_periods p ON p.id=r.employment_period_id JOIN %1$I.employees e ON e.id=p.employee_id WHERE r.id=$1'
+ WHEN 'event' THEN 'SELECT e.store_id FROM %1$I.attendance_events r JOIN %1$I.employees e ON e.id=r.employee_id WHERE r.id=$1'
+ WHEN 'document' THEN 'SELECT e.store_id FROM %1$I.employee_documents r JOIN %1$I.employees e ON e.id=r.employee_id WHERE r.id=$1'
+ WHEN 'request' THEN 'SELECT e.store_id FROM %1$I.correction_requests r JOIN %1$I.employees e ON e.id=r.employee_id WHERE r.id=$1'
+ ELSE NULL END;
+ IF q IS NULL THEN RAISE EXCEPTION 'INVALID_RESOURCE'; END IF;
+ EXECUTE format(q,s) INTO st USING p_id;
+ IF st IS NULL OR NOT EXISTS(SELECT 1 FROM public.tenants t JOIN public.tenant_memberships m ON m.tenant_id=t.id WHERE t.schema_name=s AND m.user_id=auth.uid() AND (m.role='HQ' OR m.store_id=st)) THEN RAISE EXCEPTION 'RESOURCE_ACCESS_DENIED' USING ERRCODE='42501'; END IF;
+END $$;
+REVOKE ALL ON FUNCTION public.assert_resource_access(text,bigint) FROM PUBLIC,anon,authenticated;
 CREATE OR REPLACE FUNCTION public.admin_absence_decision_set(p_employee_id bigint, p_work_date date, p_decision text, p_note text DEFAULT NULL::text) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $api$
  DECLARE s name; result jsonb; entry jsonb;
  BEGIN
@@ -34,8 +52,7 @@ CREATE OR REPLACE FUNCTION public.admin_attendance_break_decision_save(p_store_i
  s:=public.current_tenant_schema();
  IF auth.uid() IS NULL OR NOT EXISTS(SELECT 1 FROM public.tenant_memberships m JOIN public.tenants t ON t.id=m.tenant_id WHERE t.schema_name=s AND m.user_id=auth.uid()) THEN
  RAISE EXCEPTION 'TENANT_ACCESS_DENIED' USING ERRCODE='42501'; END IF;
- PERFORM public.assert_resource_access('store',p_store_id);
-PERFORM public.assert_resource_access('employee',p_employee_id);
+ PERFORM public.assert_resource_access('employee',p_employee_id);
 
  EXECUTE format('SELECT to_jsonb(%I.admin_attendance_break_decision_save($1,$2,$3,$4,$5))',s) INTO result USING "p_store_id","p_employee_id","p_in_event_id","p_break_provided","p_compensate_30m";
  
@@ -50,8 +67,7 @@ CREATE OR REPLACE FUNCTION public.admin_attendance_break_decisions(p_store_id bi
  s:=public.current_tenant_schema();
  IF auth.uid() IS NULL OR NOT EXISTS(SELECT 1 FROM public.tenant_memberships m JOIN public.tenants t ON t.id=m.tenant_id WHERE t.schema_name=s AND m.user_id=auth.uid()) THEN
  RAISE EXCEPTION 'TENANT_ACCESS_DENIED' USING ERRCODE='42501'; END IF;
- PERFORM public.assert_resource_access('store',p_store_id);
-
+ 
  EXECUTE format('SELECT to_jsonb(%I.admin_attendance_break_decisions($1,$2,$3))',s) INTO result USING "p_store_id","p_from","p_to";
  
  RETURN result;
@@ -215,8 +231,7 @@ CREATE OR REPLACE FUNCTION public.admin_create_employee_for_store(p_name text, p
  s:=public.current_tenant_schema();
  IF auth.uid() IS NULL OR NOT EXISTS(SELECT 1 FROM public.tenant_memberships m JOIN public.tenants t ON t.id=m.tenant_id WHERE t.schema_name=s AND m.user_id=auth.uid()) THEN
  RAISE EXCEPTION 'TENANT_ACCESS_DENIED' USING ERRCODE='42501'; END IF;
- PERFORM public.assert_resource_access('store',p_store_id);
-
+ 
  EXECUTE format('SELECT to_jsonb(%I.admin_create_employee_for_store($1,$2,$3))',s) INTO result USING "p_name","p_pin","p_store_id";
  
  RETURN result;
@@ -244,8 +259,7 @@ CREATE OR REPLACE FUNCTION public.admin_create_employee_onboarding_for_store(p_n
  s:=public.current_tenant_schema();
  IF auth.uid() IS NULL OR NOT EXISTS(SELECT 1 FROM public.tenant_memberships m JOIN public.tenants t ON t.id=m.tenant_id WHERE t.schema_name=s AND m.user_id=auth.uid()) THEN
  RAISE EXCEPTION 'TENANT_ACCESS_DENIED' USING ERRCODE='42501'; END IF;
- PERFORM public.assert_resource_access('store',p_store_id);
-
+ 
  EXECUTE format('SELECT to_jsonb(%I.admin_create_employee_onboarding_for_store($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15))',s) INTO result USING "p_name","p_pin","p_started_on","p_payroll_type","p_hourly_wage","p_monthly_salary","p_tax_treatment","p_business_deduction_rate","p_night_allowance_enabled","p_night_allowance_mode","p_night_allowance_value","p_night_allowance_start","p_memo","p_workdays","p_store_id";
  
  RETURN result;
@@ -522,8 +536,7 @@ CREATE OR REPLACE FUNCTION public.admin_inventory_manual_list(p_store_id bigint 
  s:=public.current_tenant_schema();
  IF auth.uid() IS NULL OR NOT EXISTS(SELECT 1 FROM public.tenant_memberships m JOIN public.tenants t ON t.id=m.tenant_id WHERE t.schema_name=s AND m.user_id=auth.uid()) THEN
  RAISE EXCEPTION 'TENANT_ACCESS_DENIED' USING ERRCODE='42501'; END IF;
- PERFORM public.assert_resource_access('store',p_store_id);
-
+ 
  EXECUTE format('SELECT coalesce(jsonb_agg(to_jsonb(r)),''[]''::jsonb) FROM %I.admin_inventory_manual_list($1) r',s) INTO result USING "p_store_id";
  
  RETURN result;
@@ -537,8 +550,7 @@ CREATE OR REPLACE FUNCTION public.admin_inventory_manual_save(p_id bigint, p_sto
  s:=public.current_tenant_schema();
  IF auth.uid() IS NULL OR NOT EXISTS(SELECT 1 FROM public.tenant_memberships m JOIN public.tenants t ON t.id=m.tenant_id WHERE t.schema_name=s AND m.user_id=auth.uid()) THEN
  RAISE EXCEPTION 'TENANT_ACCESS_DENIED' USING ERRCODE='42501'; END IF;
- PERFORM public.assert_resource_access('store',p_store_id);
-
+ 
  EXECUTE format('SELECT to_jsonb(%I.admin_inventory_manual_save($1,$2,$3,$4,$5,$6,$7,$8,$9,$10))',s) INTO result USING "p_id","p_store_id","p_name","p_sku","p_category","p_unit","p_on_hand","p_target_level","p_reorder_point","p_thumbnail_url";
  
  RETURN result;
@@ -552,8 +564,7 @@ CREATE OR REPLACE FUNCTION public.admin_inventory_manual_save_v2(p_id bigint, p_
  s:=public.current_tenant_schema();
  IF auth.uid() IS NULL OR NOT EXISTS(SELECT 1 FROM public.tenant_memberships m JOIN public.tenants t ON t.id=m.tenant_id WHERE t.schema_name=s AND m.user_id=auth.uid()) THEN
  RAISE EXCEPTION 'TENANT_ACCESS_DENIED' USING ERRCODE='42501'; END IF;
- PERFORM public.assert_resource_access('store',p_store_id);
-
+ 
  EXECUTE format('SELECT to_jsonb(%I.admin_inventory_manual_save_v2($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11))',s) INTO result USING "p_id","p_store_id","p_name","p_sku","p_category","p_unit","p_on_hand","p_target_level","p_reorder_point","p_thumbnail_url","p_source_item_id";
  
  RETURN result;
@@ -623,8 +634,7 @@ CREATE OR REPLACE FUNCTION public.admin_inventory_purchase_order_create(p_store_
  s:=public.current_tenant_schema();
  IF auth.uid() IS NULL OR NOT EXISTS(SELECT 1 FROM public.tenant_memberships m JOIN public.tenants t ON t.id=m.tenant_id WHERE t.schema_name=s AND m.user_id=auth.uid()) THEN
  RAISE EXCEPTION 'TENANT_ACCESS_DENIED' USING ERRCODE='42501'; END IF;
- PERFORM public.assert_resource_access('store',p_store_id);
-
+ 
  EXECUTE format('SELECT to_jsonb(%I.admin_inventory_purchase_order_create($1,$2,$3,$4,$5))',s) INTO result USING "p_store_id","p_item_id","p_manual_item_id","p_quantity","p_note";
  
  RETURN result;
@@ -638,8 +648,7 @@ CREATE OR REPLACE FUNCTION public.admin_inventory_purchase_order_list(p_store_id
  s:=public.current_tenant_schema();
  IF auth.uid() IS NULL OR NOT EXISTS(SELECT 1 FROM public.tenant_memberships m JOIN public.tenants t ON t.id=m.tenant_id WHERE t.schema_name=s AND m.user_id=auth.uid()) THEN
  RAISE EXCEPTION 'TENANT_ACCESS_DENIED' USING ERRCODE='42501'; END IF;
- PERFORM public.assert_resource_access('store',p_store_id);
-
+ 
  EXECUTE format('SELECT coalesce(jsonb_agg(to_jsonb(r)),''[]''::jsonb) FROM %I.admin_inventory_purchase_order_list($1,$2) r',s) INTO result USING "p_store_id","p_open_only";
  
  RETURN result;
@@ -879,8 +888,7 @@ CREATE OR REPLACE FUNCTION public.admin_payroll_substitutions(p_store_id bigint,
  s:=public.current_tenant_schema();
  IF auth.uid() IS NULL OR NOT EXISTS(SELECT 1 FROM public.tenant_memberships m JOIN public.tenants t ON t.id=m.tenant_id WHERE t.schema_name=s AND m.user_id=auth.uid()) THEN
  RAISE EXCEPTION 'TENANT_ACCESS_DENIED' USING ERRCODE='42501'; END IF;
- PERFORM public.assert_resource_access('store',p_store_id);
-
+ 
  EXECUTE format('SELECT coalesce(jsonb_agg(to_jsonb(r)),''[]''::jsonb) FROM %I.admin_payroll_substitutions($1,$2) r',s) INTO result USING "p_store_id","p_ym";
  
  RETURN result;
@@ -1140,8 +1148,7 @@ CREATE OR REPLACE FUNCTION public.admin_store_payroll_contract_workdays(p_store_
  s:=public.current_tenant_schema();
  IF auth.uid() IS NULL OR NOT EXISTS(SELECT 1 FROM public.tenant_memberships m JOIN public.tenants t ON t.id=m.tenant_id WHERE t.schema_name=s AND m.user_id=auth.uid()) THEN
  RAISE EXCEPTION 'TENANT_ACCESS_DENIED' USING ERRCODE='42501'; END IF;
- PERFORM public.assert_resource_access('store',p_store_id);
-
+ 
  EXECUTE format('SELECT coalesce(jsonb_agg(to_jsonb(r)),''[]''::jsonb) FROM %I.admin_store_payroll_contract_workdays($1,$2) r',s) INTO result USING "p_store_id","p_month";
  
  RETURN result;
@@ -1155,8 +1162,7 @@ CREATE OR REPLACE FUNCTION public.admin_store_payroll_contracts(p_store_id bigin
  s:=public.current_tenant_schema();
  IF auth.uid() IS NULL OR NOT EXISTS(SELECT 1 FROM public.tenant_memberships m JOIN public.tenants t ON t.id=m.tenant_id WHERE t.schema_name=s AND m.user_id=auth.uid()) THEN
  RAISE EXCEPTION 'TENANT_ACCESS_DENIED' USING ERRCODE='42501'; END IF;
- PERFORM public.assert_resource_access('store',p_store_id);
-
+ 
  EXECUTE format('SELECT coalesce(jsonb_agg(to_jsonb(r)),''[]''::jsonb) FROM %I.admin_store_payroll_contracts($1,$2) r',s) INTO result USING "p_store_id","p_month";
  
  RETURN result;
@@ -1170,8 +1176,7 @@ CREATE OR REPLACE FUNCTION public.admin_store_payroll_contracts_v2(p_store_id bi
  s:=public.current_tenant_schema();
  IF auth.uid() IS NULL OR NOT EXISTS(SELECT 1 FROM public.tenant_memberships m JOIN public.tenants t ON t.id=m.tenant_id WHERE t.schema_name=s AND m.user_id=auth.uid()) THEN
  RAISE EXCEPTION 'TENANT_ACCESS_DENIED' USING ERRCODE='42501'; END IF;
- PERFORM public.assert_resource_access('store',p_store_id);
-
+ 
  EXECUTE format('SELECT coalesce(jsonb_agg(to_jsonb(r)),''[]''::jsonb) FROM %I.admin_store_payroll_contracts_v2($1,$2) r',s) INTO result USING "p_store_id","p_month";
  
  RETURN result;
@@ -1185,8 +1190,7 @@ CREATE OR REPLACE FUNCTION public.admin_store_product_retirement_finalize(p_stor
  s:=public.current_tenant_schema();
  IF auth.uid() IS NULL OR NOT EXISTS(SELECT 1 FROM public.tenant_memberships m JOIN public.tenants t ON t.id=m.tenant_id WHERE t.schema_name=s AND m.user_id=auth.uid()) THEN
  RAISE EXCEPTION 'TENANT_ACCESS_DENIED' USING ERRCODE='42501'; END IF;
- PERFORM public.assert_resource_access('store',p_store_id);
-
+ 
  EXECUTE format('SELECT to_jsonb(%I.admin_store_product_retirement_finalize($1,$2))',s) INTO result USING "p_store_id","p_product_id";
  
  RETURN result;
@@ -1200,8 +1204,7 @@ CREATE OR REPLACE FUNCTION public.admin_store_recipe_list(p_store_id bigint) RET
  s:=public.current_tenant_schema();
  IF auth.uid() IS NULL OR NOT EXISTS(SELECT 1 FROM public.tenant_memberships m JOIN public.tenants t ON t.id=m.tenant_id WHERE t.schema_name=s AND m.user_id=auth.uid()) THEN
  RAISE EXCEPTION 'TENANT_ACCESS_DENIED' USING ERRCODE='42501'; END IF;
- PERFORM public.assert_resource_access('store',p_store_id);
-
+ 
  EXECUTE format('SELECT coalesce(jsonb_agg(to_jsonb(r)),''[]''::jsonb) FROM %I.admin_store_recipe_list($1) r',s) INTO result USING "p_store_id";
  
  RETURN result;
@@ -1215,8 +1218,7 @@ CREATE OR REPLACE FUNCTION public.admin_store_recipe_override_clear(p_store_id b
  s:=public.current_tenant_schema();
  IF auth.uid() IS NULL OR NOT EXISTS(SELECT 1 FROM public.tenant_memberships m JOIN public.tenants t ON t.id=m.tenant_id WHERE t.schema_name=s AND m.user_id=auth.uid()) THEN
  RAISE EXCEPTION 'TENANT_ACCESS_DENIED' USING ERRCODE='42501'; END IF;
- PERFORM public.assert_resource_access('store',p_store_id);
-
+ 
  EXECUTE format('SELECT to_jsonb(%I.admin_store_recipe_override_clear($1,$2))',s) INTO result USING "p_store_id","p_menu_key";
  
  RETURN result;
@@ -1230,8 +1232,7 @@ CREATE OR REPLACE FUNCTION public.admin_store_recipe_override_save(p_store_id bi
  s:=public.current_tenant_schema();
  IF auth.uid() IS NULL OR NOT EXISTS(SELECT 1 FROM public.tenant_memberships m JOIN public.tenants t ON t.id=m.tenant_id WHERE t.schema_name=s AND m.user_id=auth.uid()) THEN
  RAISE EXCEPTION 'TENANT_ACCESS_DENIED' USING ERRCODE='42501'; END IF;
- PERFORM public.assert_resource_access('store',p_store_id);
-
+ 
  EXECUTE format('SELECT to_jsonb(%I.admin_store_recipe_override_save($1,$2,$3,$4,$5,$6,$7))',s) INTO result USING "p_store_id","p_menu_key","p_menu_name","p_category","p_components","p_thumbnail_url","p_instructions";
  
  RETURN result;
@@ -1259,8 +1260,7 @@ CREATE OR REPLACE FUNCTION public.admin_store_settings_get(p_store_id bigint DEF
  s:=public.current_tenant_schema();
  IF auth.uid() IS NULL OR NOT EXISTS(SELECT 1 FROM public.tenant_memberships m JOIN public.tenants t ON t.id=m.tenant_id WHERE t.schema_name=s AND m.user_id=auth.uid()) THEN
  RAISE EXCEPTION 'TENANT_ACCESS_DENIED' USING ERRCODE='42501'; END IF;
- PERFORM public.assert_resource_access('store',p_store_id);
-
+ 
  EXECUTE format('SELECT to_jsonb(%I.admin_store_settings_get($1))',s) INTO result USING "p_store_id";
  
  RETURN result;
@@ -1274,8 +1274,7 @@ CREATE OR REPLACE FUNCTION public.admin_store_settings_set(p_open_minute integer
  s:=public.current_tenant_schema();
  IF auth.uid() IS NULL OR NOT EXISTS(SELECT 1 FROM public.tenant_memberships m JOIN public.tenants t ON t.id=m.tenant_id WHERE t.schema_name=s AND m.user_id=auth.uid()) THEN
  RAISE EXCEPTION 'TENANT_ACCESS_DENIED' USING ERRCODE='42501'; END IF;
- PERFORM public.assert_resource_access('store',p_store_id);
-
+ 
  EXECUTE format('SELECT to_jsonb(%I.admin_store_settings_set($1,$2,$3,$4))',s) INTO result USING "p_open_minute","p_close_minute","p_close_grace_minutes","p_store_id";
  
  RETURN result;
@@ -1333,8 +1332,7 @@ CREATE OR REPLACE FUNCTION public.can_manage_store(p_store_id bigint) RETURNS js
  s:=public.current_tenant_schema();
  IF auth.uid() IS NULL OR NOT EXISTS(SELECT 1 FROM public.tenant_memberships m JOIN public.tenants t ON t.id=m.tenant_id WHERE t.schema_name=s AND m.user_id=auth.uid()) THEN
  RAISE EXCEPTION 'TENANT_ACCESS_DENIED' USING ERRCODE='42501'; END IF;
- PERFORM public.assert_resource_access('store',p_store_id);
-
+ 
  EXECUTE format('SELECT to_jsonb(%I.can_manage_store($1))',s) INTO result USING "p_store_id";
  
  RETURN result;
@@ -1388,12 +1386,15 @@ CREATE OR REPLACE FUNCTION public.list_active_employees() RETURNS jsonb LANGUAGE
  DECLARE s name; result jsonb; entry jsonb;
  BEGIN
  s:=public.current_tenant_schema();
- EXECUTE format('SELECT coalesce(jsonb_agg(to_jsonb(r)),''[]''::jsonb) FROM %I.list_active_employees() r WHERE r.store_id=public.current_store_id()',s) INTO result;
+ IF auth.uid() IS NULL OR NOT EXISTS(SELECT 1 FROM public.tenant_memberships m JOIN public.tenants t ON t.id=m.tenant_id WHERE t.schema_name=s AND m.user_id=auth.uid()) THEN
+ RAISE EXCEPTION 'TENANT_ACCESS_DENIED' USING ERRCODE='42501'; END IF;
+ 
+ EXECUTE format('SELECT coalesce(jsonb_agg(to_jsonb(r)),''[]''::jsonb) FROM %I.list_active_employees() r',s) INTO result;
  
  RETURN result;
  END $api$;
  REVOKE ALL ON FUNCTION public.list_active_employees() FROM PUBLIC,anon,authenticated;
- GRANT EXECUTE ON FUNCTION public.list_active_employees() TO anon,authenticated;
+ GRANT EXECUTE ON FUNCTION public.list_active_employees() TO authenticated;
  
 CREATE OR REPLACE FUNCTION public.list_employees_state(p_store_id bigint DEFAULT NULL::bigint) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $api$
  DECLARE s name; result jsonb; entry jsonb;
@@ -1412,8 +1413,7 @@ CREATE OR REPLACE FUNCTION public.list_store_employees(p_store_id bigint) RETURN
  s:=public.current_tenant_schema();
  IF auth.uid() IS NULL OR NOT EXISTS(SELECT 1 FROM public.tenant_memberships m JOIN public.tenants t ON t.id=m.tenant_id WHERE t.schema_name=s AND m.user_id=auth.uid()) THEN
  RAISE EXCEPTION 'TENANT_ACCESS_DENIED' USING ERRCODE='42501'; END IF;
- PERFORM public.assert_resource_access('store',p_store_id);
-
+ 
  EXECUTE format('SELECT coalesce(jsonb_agg(to_jsonb(r)),''[]''::jsonb) FROM %I.list_store_employees($1) r',s) INTO result USING "p_store_id";
  
  RETURN result;
