@@ -1,0 +1,32 @@
+name: Import reference baseline (read-only source)
+on:
+  push:
+    branches: [baseline-transfer-action-20261008]
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          path: destination
+      - uses: actions/checkout@v4
+        with:
+          repository: koith/attendance-proto
+          ref: main
+          path: reference
+          persist-credentials: false
+      - name: Copy reference into isolated non-deployed directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p destination/reference-baseline
+          rsync -a --delete --exclude=.git --exclude=.github --exclude=.env --exclude='*.secret' reference/ destination/reference-baseline/
+          cd destination
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reference-baseline
+          git commit -m "Import read-only Baekeok source baseline for generic port" || exit 0
+          git push origin HEAD:baseline-transfer-action-20261008
