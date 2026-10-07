@@ -1,0 +1,15 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const r=p=>fs.readFileSync(p,'utf8');const h=r('actual_attendance.html'),all=r('actual_attendance.js'),j=all.slice(all.indexOf('Actual attendance V1.1'),all.indexOf('Actual attendance V1.2')),c=r('actual_attendance_correction.css');let pass=0;const t=(n,f)=>{f();pass++;console.log('PASS',n)};
+t('정정 스크립트는 실근무 본체 뒤에 로드',()=>{assert(h.includes('actual_attendance.js?v='));assert(!h.includes('actual_attendance_correction.js?v='));assert(h.includes('actual_attendance_correction.css'))});
+t('세션별 정정 진입을 제공',()=>{assert(j.includes("document.querySelectorAll('.sessions .session')"));assert(j.includes("class=\"session-fix\">정정"));assert(!j.includes(".person-row .bar'))"))});
+t('정정은 raw attendance 변경 대신 admin_correct_event 사용',()=>{assert(j.includes("rpc('admin_correct_event'"));assert(j.includes("p_action:'EDIT_TIME'"));assert(j.includes("p_action:'ADD'"));assert(!j.includes('attendance_events'))});
+t('기존 이벤트 id를 보존해 EDIT_TIME correction 생성',()=>{assert(j.includes('p_event_id:Number(source.inId)'));assert(j.includes('p_event_id:Number(source.outId)'));assert(j.includes("p_new_type:'IN'"));assert(j.includes("p_new_type:'OUT'"))});
+t('누락 출퇴근은 ADD correction으로만 보완',()=>{assert(j.includes("if(!source.inId&&nextIn)"));assert(j.includes("if(!isWorking&&!source.outId&&nextOut)"));assert(j.includes('p_event_id:null'))});
+t('정정 사유 필수 및 역전시간 방지',()=>{assert(j.includes("if(!reason){reasonEl.classList.add('input-error')")&&j.includes("reasonError.textContent='정정 사유를 입력해 주세요.'"));assert(j.includes('if(a&&b&&b<=a)'));assert(j.includes('퇴근 시각은 출근 시각보다 늦어야 합니다.'))});
+t('날짜별 파생 표시에서도 원본 세션을 정정',()=>{assert(j.includes('actualAttendanceSourceSession'));assert(j.includes('const source='))});
+t('저장 후 effective attendance를 재조회하고 같은 날짜로 복귀',()=>{assert(j.includes('await loadMonth();renderDay(day)'))});
+t('관리자 ADD 기록 삭제는 VOID_ADD 마커가 붙은 ADD를 effective attendance에서 제외',()=>{assert(all.includes("/\\[VOID_ADD:\\d+\\]/"));assert(all.includes("if(c.action==='ADD')"));assert(all.includes("action:'VOID_ADD'"))});
+t('완결 세션도 관리자 ADD 출근 correction id를 보존',()=>{assert(all.includes('inId:open.e.id,inCorrectionId:open.e.correctionId||null,outId:e.id,outCorrectionId:e.correctionId||null'))});
+t('DB correction action 제약은 VOID_ADD를 허용',()=>{const sql=r('supabase/migrations/20261003174200_allow_void_add_attendance_corrections.sql');assert(sql.includes("'VOID_ADD'::text"))});
+t('모바일 datetime 입력 폭 방어',()=>{assert(c.includes('input{display:block;width:100%;min-width:0;max-width:100%'));assert(c.includes('-webkit-appearance:none'))});
+console.log(`Actual attendance correction V1 QA: ${pass} PASS`);
