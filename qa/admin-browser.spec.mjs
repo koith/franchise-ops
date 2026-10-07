@@ -1,5 +1,5 @@
 import {test,expect} from '@playwright/test';
-test.setTimeout(120000);
+test.setTimeout(240000);
 test('authenticated original administrator workflows on isolated tenant',async({page,request})=>{
  const oidc=await request.get(process.env.ACTIONS_ID_TOKEN_REQUEST_URL+'&audience=franchise-ops-browser-qa',{headers:{Authorization:'Bearer '+process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN}});
  expect(oidc.ok()).toBeTruthy();const {value:jwt}=await oidc.json();
@@ -15,12 +15,23 @@ test('authenticated original administrator workflows on isolated tenant',async({
   await expect(page.locator('.hq-store-panel')).toContainText('격리 검증점',{timeout:30000});
   await page.locator('.hq-store-panel button').first().click();
   await expect(page.locator('#empGrid')).toContainText('격리 검증 직원');
+  for(const width of [393,1440]){
+  await page.setViewportSize({width,height:width===393?852:1000});
   for(const route of ['admin','pay','hours','report','sales','inventory']){
    await page.goto('http://127.0.0.1:4173/?tenant=qa-isolation#'+route);
    await expect(page.locator('#view')).not.toBeEmpty();
    await expect(page.locator('.admin-subtabs')).toBeVisible({timeout:20000});
    await expect(page.locator('#loginEmail')).toHaveCount(0);
-   await page.screenshot({path:`artifacts/admin-${route}-393.png`,fullPage:true});
+   if(route==='pay'){
+    await expect(page.locator('#payList')).not.toContainText('계산 중',{timeout:30000});
+    await expect(page.locator('#payList')).not.toContainText('불러오기 실패');
+   }
+   if(route==='report')await expect(page.locator('.ops-kpis')).toBeVisible({timeout:30000});
+   if(route==='sales')await expect(page.locator('#opsType')).toBeVisible({timeout:30000});
+   if(route==='inventory')await expect(page.locator('#opsInventoryAdd')).toBeVisible({timeout:30000});
+   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();
+   await page.screenshot({path:`artifacts/admin-${route}-${width}.png`,fullPage:true});
+  }
   }
   expect(errors).toEqual([]);
  }finally{
