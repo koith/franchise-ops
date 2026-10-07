@@ -20,25 +20,14 @@
       badges.push("대용량 베이스"+(n?"("+n[1]+"잔)":""));
       return badges;
     }
-    if(cat==="백억휴게소") badges.push("푸드류(백억 휴게소)");
-    else if(cat==="백억 시네마") badges.push("푸드류(백억 시네마)");
-    else if(cat==="디저트&베이커리") badges.push("푸드류(베이커리)");
-    else if(cat==="커피&콜드브루") badges.push("커피");
-    else if(cat==="라떼&버블티") badges.push(/^찐\s*/.test(name)?"찐 우유":/버블|펄/.test(name)?"버블티":"라떼");
-    else if(cat==="스무디&에이드") badges.push(/스무디/.test(name)?"스무디":/주스/.test(name)?"주스":"에이드");
-    else if(cat==="티&주스") badges.push(/주스/.test(name)?"주스":"티 & 스윗티");
-    else if(/라떼/.test(name)) badges.push("라떼");
-    else if(/스무디|쉐이크/.test(name)) badges.push("스무디");
-    else if(/주스/.test(name)) badges.push("주스");
-    else if(/에이드|소다/.test(name)) badges.push("에이드");
-    else if(/티/.test(name)) badges.push("티 & 스윗티");
-    else if(cat) badges.push(cat);
+    const aliases=window.TENANT_CONFIG?.reference_data?.category_labels||{};
+    if(cat) badges.push(aliases[cat]||cat);
     if(name==="추가 옵션"||/추가\s*옵션/.test(name)) badges.push("추가 옵션");
     return badges;
   };
   const badgeHtml=row=>recipeBadges(row).map(x=>'<span class="recipe-v220-kind '+(x==="추가 옵션"?"option":"")+'">'+esc(x)+'</span>').join("");
-  const EDIT_CATEGORIES=["커피","라떼","찐 우유","스무디","주스","에이드","버블티","티 & 스윗티","푸드 조리","대용량 베이스","푸드류(베이커리)","푸드류(백억 휴게소)","푸드류(백억 시네마)"];
-  const categoryOptions=current=>[...new Set([current,...EDIT_CATEGORIES].filter(Boolean))].map(x=>`<option value="${esc(x)}" ${x===current?"selected":""}>${esc(x)}</option>`).join("");
+  const editCategories=()=>window.TENANT_CONFIG?.reference_data?.recipe_categories||[...new Set(reference().map(r=>r.category).filter(Boolean))];
+  const categoryOptions=current=>[...new Set([current,...editCategories(),"미분류"].filter(Boolean))].map(x=>`<option value="${esc(x)}" ${x===current?"selected":""}>${esc(x)}</option>`).join("");
 
   function modal(title,content,wide=false){
     const wrap=document.createElement("div");
