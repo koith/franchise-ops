@@ -84,7 +84,7 @@ async function renderInventory(refresh=false){
   const body=refresh?document.getElementById("opsBody"):shell("재고","발주 필요 품목과 현재 지점 재고 기준을 한 화면에서 관리합니다.");
   if(typeof window.mountAdminSubnav==="function") await window.mountAdminSubnav("inventory");
   if(!refresh)await loadInventoryManagement();
-  const all=REF.inventory||[],categories=["전체",...new Set(all.map(x=>x.category))];let rows=inventoryCategory==="전체"?all:all.filter(x=>x.category===inventoryCategory);
+  const reference=REF.inventory||[],all=[...reference,...managedInventory.filter(x=>!reference.some(r=>String(r.name).trim()===String(x.name).trim()))],categories=["전체",...new Set(all.map(x=>x.category))];let rows=inventoryCategory==="전체"?all:all.filter(x=>x.category===inventoryCategory);
   if(inventoryQuery)rows=rows.filter(x=>[x.name,x.current_text,x.minimum_text,x.order_text,x.note].some(v=>String(v||"").toLowerCase().includes(inventoryQuery)));
   body.innerHTML=orderPanel()+receivingPanel()+'<div class="ops-unified-section-title"><b>재고 기준</b><span>'+rows.length+'개</span></div><div class="ops-inventory-toolbar ops-reference-toolbar"><label>검색<input id="opsReferenceInventorySearch" type="search" value="'+esc(inventoryQuery)+'" placeholder="품목명·현재고·발주기준"></label><label>카테고리<select id="opsReferenceInventoryCat">'+categories.map(x=>'<option '+(x===inventoryCategory?'selected':'')+'>'+esc(x)+'</option>').join("")+'</select></label></div><div class="ops-stock-chart ops-stock-grid">'+(rows.length?rows.map(inventoryCard).join(""):'<div class="ops-empty"><b>검색 결과가 없습니다.</b></div>')+'</div>';
   document.getElementById("opsInventoryAdd").onclick=()=>openInventoryEditor();document.getElementById("opsInventoryBulk").onclick=openInventoryBulk;

@@ -46,6 +46,13 @@ test('authenticated original administrator workflows on isolated tenant',async({
    await page.screenshot({path:`artifacts/admin-${route}-${width}.png`,fullPage:true});
   }
   }
+  for(const name of ['actual_attendance','employment_contracts','daily_schedule','monthly_schedule','substitution','attendance_review']){
+   await page.goto('http://127.0.0.1:4173/'+name+'.html?tenant=qa-isolation');
+   await page.waitForLoadState('networkidle',{timeout:30000});
+   await expect(page.locator('body')).not.toBeEmpty();
+   await expect(page.locator('body')).not.toContainText('TENANT_NOT_FOUND');
+   await page.screenshot({path:`artifacts/module-${name}.png`,fullPage:true});
+  }
   expect(errors).toEqual([]);
  }finally{
   const r=await request.post(endpoint,{headers,data:{action:'cleanup',user_id:account.user_id}});expect(r.ok(),'QA identity cleanup').toBeTruthy();
