@@ -1,0 +1,57 @@
+(()=>{
+  if(window.__franchiseTestUiV1)return;window.__franchiseTestUiV1=true;
+  if(!window.FranchiseTest)return;
+  const T=window.FranchiseTest;
+  const pad=n=>String(n).padStart(2,'0');
+  const localValue=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  function ensureStyle(){
+    let s=document.getElementById('testModeStyle');if(s)return;
+    s=document.createElement('style');s.id='testModeStyle';s.textContent=`
+body.test-mode::before{content:"";position:fixed;inset:0;z-index:9990;pointer-events:none;background:rgba(120,70,255,.09);box-shadow:inset 0 0 0 3px rgba(120,70,255,.45)}
+#testModeBanner{position:fixed;z-index:9997;left:50%;top:calc(env(safe-area-inset-top) + 43px);transform:translateX(-50%);background:#5b35d5;color:#fff;border-radius:999px;padding:5px 10px;font-size:.68rem;font-weight:800;pointer-events:none;white-space:nowrap}
+#testModeControls{position:fixed;z-index:10020;left:max(8px,env(safe-area-inset-left));top:calc(env(safe-area-inset-top) + 6px);display:flex;align-items:center;gap:5px}
+#testModeCorner,#testClockButton{height:30px;border-radius:999px;background:rgba(255,255,255,.94);border:1px solid #cfd8d2;box-shadow:0 2px 10px rgba(0,0,0,.12);font-size:10px;font-weight:800;color:#59645d;user-select:none;-webkit-user-select:none}
+#testModeCorner{display:flex;align-items:center;gap:5px;padding:3px 7px}
+#testModeCorner.on{color:#5b35d5;border-color:rgba(91,53,213,.45);background:#f5f1ff}
+#testModeCorner .tm-track{position:relative;width:28px;height:16px;border-radius:999px;background:#b8c0bb;transition:.15s}
+#testModeCorner.on .tm-track{background:#6a45d8}
+#testModeCorner .tm-knob{position:absolute;width:12px;height:12px;left:2px;top:2px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:.15s}
+#testModeCorner.on .tm-knob{transform:translateX(12px)}
+#testClockButton{display:grid;place-items:center;width:30px;padding:0;font-size:15px}
+#testClockButton:disabled{opacity:.42;cursor:not-allowed}
+#testTimeModal{position:fixed;inset:0;z-index:10030;display:grid;place-items:center;padding:18px;background:rgba(18,28,22,.34)}
+#testTimeDialog{width:min(420px,100%);background:var(--surface,#fff);border:1px solid rgba(120,70,255,.35);border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.22);padding:16px}
+.tm-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.tm-title{display:flex;align-items:center;gap:8px;min-width:0}.tm-title b{font-size:1rem}.tm-badge{font-size:.68rem;font-weight:800;color:#5b35d5;background:rgba(91,53,213,.09);padding:4px 7px;border-radius:999px;white-space:nowrap}
+.tm-time-label{display:block;font-size:.72rem;font-weight:800;color:var(--text-muted);margin:0 0 6px 2px}.tm-time-row{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}.tm-time-row input{width:100%;min-width:0;height:44px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);color:var(--ink);padding:0 10px;font-size:.9rem;box-sizing:border-box}
+.tm-shifts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:9px}.tm-shifts button{height:40px;padding:0 4px!important;border-radius:11px!important;font-weight:800}.tm-minus{color:#a92b2b!important}.tm-plus{color:#17664d!important}
+.tm-help{margin-top:10px;padding-top:9px;border-top:1px solid rgba(120,70,255,.12);font-size:.7rem;line-height:1.45;color:var(--text-muted)}
+.tm-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.tm-actions button{height:42px}
+#testDataReset{margin-top:10px;width:100%;height:36px;font-size:.72rem}
+`;document.head.appendChild(s);
+  }
+  function closeTime(){document.getElementById('testTimeModal')?.remove()}
+  function openTime(){
+    if(!T.enabled())return;
+    closeTime();
+    const S=T.get(),base=kstNow();
+    const m=document.createElement('div');m.id='testTimeModal';
+    m.innerHTML=`<div id="testTimeDialog" role="dialog" aria-modal="true" aria-labelledby="testTimeTitle"><div class="tm-head"><div class="tm-title"><b id="testTimeTitle">테스트 시간 조작</b><span class="tm-badge">운영 데이터 변경 안 함</span></div></div><label class="tm-time-label" for="testNowDraft">가상 시간</label><div class="tm-time-row"><input id="testNowDraft" type="datetime-local" value="${localValue(base)}"></div><div class="tm-shifts"><button class="btn btn-secondary btn-sm tm-minus" data-shift="-8">−8시간</button><button class="btn btn-secondary btn-sm tm-minus" data-shift="-1">−1시간</button><button class="btn btn-secondary btn-sm tm-plus" data-shift="1">+1시간</button><button class="btn btn-secondary btn-sm tm-plus" data-shift="8">+8시간</button></div><div class="tm-help">시간을 조작한 뒤 적용해야 반영됩니다. 취소하면 기존 시간이 유지됩니다.</div><div class="tm-actions"><button class="btn btn-secondary" id="testTimeCancel">취소</button><button class="btn btn-primary" id="testTimeApply">적용</button></div><button class="btn btn-danger btn-sm" id="testDataReset">테스트 데이터 초기화</button></div>`;
+    document.body.appendChild(m);
+    const input=m.querySelector('#testNowDraft');
+    m.querySelectorAll('[data-shift]').forEach(b=>b.onclick=()=>{const d=new Date(input.value);if(isNaN(d))return;d.setHours(d.getHours()+Number(b.dataset.shift));input.value=localValue(d)});
+    m.querySelector('#testTimeCancel').onclick=closeTime;
+    m.querySelector('#testTimeApply').onclick=()=>{const d=new Date(input.value);if(isNaN(d))return;S.now=d.toISOString();T.set(S);closeTime();location.reload()};
+    m.querySelector('#testDataReset').onclick=()=>{if(confirm('테스트 데이터만 초기화할까요?')){S.events=[];S.corrections=[];S.seq=1;T.set(S);localStorage.removeItem('franchise_test_substitution_v1');closeTime();location.reload()}};
+    m.onclick=e=>{if(e.target===m)closeTime()};
+  }
+  function visual(){
+    ensureStyle();const on=T.enabled();document.body.classList.toggle('test-mode',on);
+    let b=document.getElementById('testModeBanner');if(on){if(!b){b=document.createElement('div');b.id='testModeBanner';document.body.appendChild(b)}b.textContent='TEST MODE · 운영 데이터 변경 안 함'}else b?.remove();
+    let wrap=document.getElementById('testModeControls');if(!wrap){wrap=document.createElement('div');wrap.id='testModeControls';wrap.innerHTML='<button type="button" id="testClockButton" aria-label="테스트 시간 조작" title="테스트 시간 조작">◷</button><button type="button" id="testModeCorner" aria-label="테스트 모드 전환"><span class="tm-label"></span><span class="tm-track"><span class="tm-knob"></span></span></button>';document.body.appendChild(wrap);wrap.querySelector('#testClockButton').onclick=openTime;wrap.querySelector('#testModeCorner').onclick=()=>{const S=T.get();S.enabled=!S.enabled;if(S.enabled&&!S.now)S.now=new Date().toISOString();T.set(S);closeTime();visual();window.dispatchEvent(new CustomEvent('franchise:test-mode-change',{detail:{enabled:S.enabled}}))}}
+    const c=wrap.querySelector('#testModeCorner'),clock=wrap.querySelector('#testClockButton');c.classList.toggle('on',on);c.querySelector('.tm-label').textContent=on?'TEST':'LIVE';c.setAttribute('aria-pressed',on?'true':'false');clock.disabled=!on;
+    document.getElementById('testModeCard')?.remove();
+  }
+  const sync=()=>visual();
+  if(typeof renderAdmin==='function'){const base=renderAdmin;renderAdmin=async function(...a){const r=await base.apply(this,a);queueMicrotask(sync);return r}}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',sync,{once:true});else sync();
+})();

@@ -9,24 +9,32 @@ permissions:
   pages: write
   id-token: write
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: pages-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   qa:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm test
+      - run: node qa/port-contract.mjs
       - name: Browser interaction QA
+        timeout-minutes: 12
         run: |
           npm install --no-save @playwright/test@1.55.0
           npx playwright install --with-deps chromium
           mkdir -p artifacts
           python3 -m http.server 4173 >/tmp/franchise-http.log 2>&1 &
-          npx playwright test qa/browser.spec.mjs --reporter=line
+          npx playwright test qa/browser.spec.mjs qa/admin-browser.spec.mjs --workers=1 --reporter=line
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-qa
+          path: artifacts
   deploy:
     if: github.event_name == 'push'
     needs: qa
@@ -39,9 +47,13 @@ jobs:
       - uses: actions/configure-pages@v5
         with:
           enablement: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node tools/build-pages.mjs
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: dist
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4

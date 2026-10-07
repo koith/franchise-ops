@@ -1,0 +1,1 @@
+ALTER TABLE tenant_template.store_settings DROP CONSTRAINT store_settings_id_check; ALTER TABLE tenant_sample.store_settings DROP CONSTRAINT store_settings_id_check; ALTER TABLE tenant_qa.store_settings DROP CONSTRAINT store_settings_id_check;

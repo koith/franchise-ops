@@ -1,0 +1,12 @@
+import fs from 'node:fs';
+let pass=0,fail=0;const ok=(n,c)=>{if(c){pass++;console.log('✓ '+n)}else{fail++;console.error('✗ '+n)}};
+const m=fs.readFileSync('monthly_schedule.js','utf8');
+const g=fs.readFileSync('monthly_schedule_contract_guard.js','utf8');
+ok('step 2 next still advances wizard',m.includes("if(S.step===2&&S.mode==='WORK'")&&m.includes('S.step++;render()'));
+ok('date-select label remains step 2 CTA',m.includes('id="next">날짜 선택</button>'));
+ok('contract guide no longer observes app DOM',!g.includes('new MutationObserver')&&!g.includes('contractGuideObserver.observe'));
+ok('contract decoration is skipped before date step on mobile',g.includes('if(mobile()&&S.step<3)return'));
+const wrapStart=g.indexOf('render=function(){'),baseCall=g.indexOf('baseRender();',wrapStart),decorateCall=g.indexOf('requestAnimationFrame',baseCall);
+ok('render wrapper decorates only after base render',wrapStart>=0&&baseCall>wrapStart&&decorateCall>baseCall&&g.includes('S.step>=3'));
+ok('save interception remains limited to actual save buttons',g.includes("closest?.('#saveWizard')")&&g.includes("closest?.('#saveDraft')")&&!g.includes("closest?.('#next')"));
+console.log(`\nMonthly date-select hotfix QA: ${pass} passed, ${fail} failed`);if(fail)process.exit(1);

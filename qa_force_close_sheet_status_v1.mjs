@@ -1,0 +1,1 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';const s=fs.readFileSync('index.html','utf8');assert(s.includes('franchise_sheet_sync_v1'));assert(s.includes('syncAt.toISOString()'));assert(s.includes('자동 갱신됨'));assert(s.includes('자동 갱신 재시도 예정'));console.log('sheet status PASS');
