@@ -7,7 +7,8 @@ const tenant=params.get('tenant')||native.get.call(sessionStorage,'franchise:act
 if(!/^[a-z0-9][a-z0-9-]{0,62}$/.test(tenant))throw Error('INVALID_TENANT');
 native.set.call(sessionStorage,'franchise:active-tenant',tenant);
 const base=`franchise:${tenant}:`;
-const store=()=>params.get('store')||native.get.call(sessionStorage,base+'store-context')||'hq';
+if(params.has('store'))native.set.call(sessionStorage,base+'store-context',params.get('store'));
+const store=()=>native.get.call(sessionStorage,base+'store-context')||'hq';
 const key=k=>{
  k=String(k);
  if(k==='franchise_store_id')return base+'store-context';

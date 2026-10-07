@@ -13,12 +13,12 @@
  *  - payload 검증 실패 시 기존 시트를 건드리지 않고 에러 반환.
  */
 
-var SHARED_SECRET = 'REPLACE_WITH_LONG_RANDOM_SECRET'; // Edge Function과 동일 값
+var SHARED_SECRET = PropertiesService.getScriptProperties().getProperty('SHEET_SHARED_SECRET');
 
 function doPost(e){
   try{
     var body = JSON.parse(e.postData.contents);
-    if(body.secret !== SHARED_SECRET){
+    if(!SHARED_SECRET || body.secret !== SHARED_SECRET){
       return _json({ok:false, error:'UNAUTHORIZED'});
     }
     // payload 기본 검증 (반쯤 지우는 사고 방지)
@@ -31,7 +31,8 @@ function doPost(e){
     var parts = body.ym.split('-');
     var year = Number(parts[0]);
     var month = Number(parts[1]);
-    var storeKey = String(body.store_key || 'INHA').replace(/[^A-Za-z0-9_-]/g,'_');
+    if(!body.tenant_id || !body.store_key) return _json({ok:false,error:'TENANT_STORE_REQUIRED'});
+    var storeKey = String(body.store_key).replace(/[^A-Za-z0-9_-]/g,'_');
     var ss = _annualBook(storeKey, year);
     var meta = '마지막 동기화: ' + body.synced_at + '   |   상태: ' + body.status_label;
 

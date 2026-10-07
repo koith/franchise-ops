@@ -13,6 +13,9 @@ for(const viewport of [{width:393,height:852},{width:1440,height:1000}]){
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();
   const layout=await page.locator('#empGrid').evaluate(e=>({columns:getComputedStyle(e).gridTemplateColumns,display:getComputedStyle(e).display}));
   expect(layout.display).toBe('grid');
+  // Measured from the actual source Pages deployment, not a replacement layout.
+  const cardStyle=await page.locator('#empGrid .emp').first().evaluate(e=>({radius:getComputedStyle(e).borderRadius,gap:getComputedStyle(e).gap}));
+  expect(cardStyle).toEqual({radius:'12px',gap:'4px'});
   if(viewport.width<600)expect(layout.columns.split(' ').length).toBe(2);
   await page.locator('#empGrid .emp').first().click();
   await expect(page.locator('#padVeil')).toHaveClass(/show/);

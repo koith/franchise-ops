@@ -9,11 +9,12 @@ permissions:
   pages: write
   id-token: write
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: pages-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   qa:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -22,6 +23,7 @@ jobs:
       - run: npm test
       - run: node qa/port-contract.mjs
       - name: Browser interaction QA
+        timeout-minutes: 12
         run: |
           npm install --no-save @playwright/test@1.55.0
           npx playwright install --with-deps chromium

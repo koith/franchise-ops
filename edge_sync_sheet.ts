@@ -16,7 +16,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-tenant-id, x-store-id",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -28,31 +28,24 @@ Deno.serve(async (req) => {
       return json({ ok: false, error: "BAD_YM" }, 400);
     }
 
-    // 관리자 인증: 호출자의 JWT가 authenticated 여야 함
-    const authHeader = req.headers.get("Authorization") || "";
-    const supa = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
-    const { data: userData } = await supa.auth.getUser();
-    if (!userData?.user) return json({ ok: false, error: "NOT_AUTHORIZED" }, 401);
-
-    const admin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
-    const { data: adminUser } = await admin.from("admin_users").select("user_id").eq("user_id", userData.user.id).maybeSingle();
-    if (!adminUser) return json({ ok: false, error: "NOT_ADMIN" }, 403);
-
-    // 마감 여부 + snapshot 조회 (service role로 직접 읽기)
-    const { data: snap } = await admin
-      .from("payroll_snapshot")
-      .select("employee_name,hours,wage,weeks,base_pay,juhyu_pay,adjust,gross_pay,net_pay,closed_at")
-      .eq("ym", ym)
-      .order("employee_name");
-
-    const isClosed = Array.isArray(snap) && snap.length > 0;
+    // The same authenticated tenant/store gateway used by the application is
+    // authoritative. Never trust a caller-supplied store name or closed payroll.
+    const tenant=req.headers.get("x-tenant-id")||"";
+    const storeId=Number(req.headers.get("x-store-id"));
+    if(!/^[a-z0-9][a-z0-9-]{0,62}$/.test(tenant)||!Number.isSafeInteger(storeId)||storeId<=0)
+      return json({ok:false,error:"TENANT_STORE_REQUIRED"},400);
+    const authHeader=req.headers.get("Authorization")||"";
+    const supa=createClient(Deno.env.get("SUPABASE_URL")!,Deno.env.get("SUPABASE_ANON_KEY")!,
+      {global:{headers:{Authorization:authHeader,"x-tenant-id":tenant,"x-store-id":String(storeId)}}});
+    const {data:userData}=await supa.auth.getUser();
+    if(!userData?.user)return json({ok:false,error:"NOT_AUTHORIZED"},401);
+    const {data:snapshot,error:snapshotError}=await supa.rpc("admin_snapshot",{p_ym:ym});
+    if(snapshotError)return json({ok:false,error:"STORE_ACCESS_DENIED"},403);
+    const {data:stores,error:storeError}=await supa.rpc("list_stores");
+    const store=Array.isArray(stores)?stores.find(s=>Number(s.id)===storeId):null;
+    if(storeError||!store)return json({ok:false,error:"STORE_NOT_FOUND"},404);
+    const snap=Array.isArray(snapshot?.rows)?snapshot.rows:[];
+    const isClosed=snapshot?.status==="CLOSED";
     const syncedAt = formatSeoulMinute(new Date());
 
     // ---- 근태/세션: 항상 앱 projection (effective) ----
@@ -84,13 +77,15 @@ Deno.serve(async (req) => {
     // ---- Apps Script 호출 (실패해도 DB 무관) ----
     const webappUrl = Deno.env.get("SHEET_WEBAPP_URL")!;
     const secret = Deno.env.get("SHEET_SHARED_SECRET")!;
+    if(!webappUrl||!secret)return json({ok:false,error:"REPORT_INTEGRATION_NOT_CONFIGURED"},503);
     const gsBody = {
+      tenant_id:tenant,
       secret, ym, synced_at: syncedAt, status_label: statusLabel,
-      store_key: String(payload?.store_key ?? "INHA"),
-      store_name: String(payload?.store_name ?? "현재 지점"),
+      store_key: tenant+"_"+String(storeId),
+      store_name: String(store.name),
       drive_structure: {
-        root_folder_name: "프랜차이즈",
-        store_folder_name: String(payload?.store_name ?? "현재 지점"),
+        root_folder_name: "프랜차이즈_"+tenant,
+        store_folder_name: String(store.name),
         create_missing_folders: true,
         one_spreadsheet_per_store: true,
         separate_by_store: true,
