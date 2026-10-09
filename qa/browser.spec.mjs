@@ -30,3 +30,9 @@ test("alternative tenant fixture",async({page})=>{
  await page.locator(".hq-store-panel button").click();
  await expect(page).toHaveURL(/store=branch1#pos/);
 });
+
+test("reference UI resolves tenant brand from dedicated Supabase",async({page})=>{
+ await page.goto("http://127.0.0.1:4173/reference-port/index.html?tenant=qa-isolation#dashboard");
+ await expect(page).toHaveTitle("격리 검증 프랜차이즈 업무자동화",{timeout:15000});
+ await expect(page.locator("#hqHome strong")).toHaveText("격리 검증 프랜차이즈");
+});
