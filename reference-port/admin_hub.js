@@ -1,0 +1,4 @@
+const CONFIG={SUPABASE_URL:"https://xkeowpbbsllfuauifdqb.supabase.co",SUPABASE_ANON_KEY:"REQUIRES_GENERIC_SUPABASE_ANON_KEY"};
+let token=null;try{token=JSON.parse(localStorage.getItem('franchise_port_auth'))?.access_token||null}catch(_){}
+async function isAdmin(){if(!token)return false;const r=await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/rpc/is_admin`,{method:'POST',headers:{apikey:CONFIG.SUPABASE_ANON_KEY,Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:'{}'});if(!r.ok)return false;return !!(await r.json())}
+(async()=>{if(!await isAdmin()){location.replace('index.html?legacyAdmin=1&returnHub=1#admin');return}document.documentElement.classList.add('ready')})();
