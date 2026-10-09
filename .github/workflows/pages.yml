@@ -27,6 +27,8 @@ jobs:
           mkdir -p artifacts
           python3 -m http.server 4173 >/tmp/franchise-http.log 2>&1 &
           npx playwright test qa/browser.spec.mjs --reporter=line
+      - name: Tenant backend OIDC isolation QA
+        run: node qa/tenant_store_live.mjs
   deploy:
     if: github.event_name == 'push'
     needs: qa
