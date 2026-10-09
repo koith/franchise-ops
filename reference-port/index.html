@@ -2,10 +2,12 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<script>window.FRANCHISE_PUBLISHABLE_KEY="sb_publishable_aClD6oI0rr-KwanFlRyUTg_GUQKwRw0";</script>
+<script src="generic-bootstrap.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>백억커피 근태</title>
+<title>프랜차이즈 업무자동화</title>
 <style>
   :root{
     /* ===== 백억커피 UI Design System V1 tokens (source of truth) ===== */
@@ -704,7 +706,7 @@
     <div class="connection-row"><div id="conn" class="conn live">클라우드 연결됨 · Supabase</div><span class="app-version-badge connection-version" id="appVersion">v0.142</span></div>
     <header>
       <div class="brand">
-        <button type="button" id="hqHome" aria-label="본사 대시보드" title="본사 대시보드" style="border:0;background:transparent;padding:0;cursor:pointer;display:flex;align-items:center;flex:0 0 auto"><img src="logo_combine.jpg" alt="백억커피"></button><span id="storeCrumb" aria-hidden="true">›</span><span class="store-select-shell"><select id="storeSelect" aria-label="지점 선택"><option value="1">인하대학교점</option></select></span><span id="lockedStoreName" class="locked-store-name" aria-label="현재 지점">인하대학교점</span>
+        <button type="button" id="hqHome" aria-label="본사 대시보드" title="본사 대시보드" style="border:0;background:transparent;padding:0;cursor:pointer;display:flex;align-items:center;flex:0 0 auto"><img src="logo_combine.jpg" alt="백억커피"></button><span id="storeCrumb" aria-hidden="true">›</span><span class="store-select-shell"><select id="storeSelect" aria-label="지점 선택"><option value="">지점 선택</option></select></span><span id="lockedStoreName" class="locked-store-name" aria-label="현재 지점">지점 선택</span>
       </div>
       <div class="clock" id="clock">--:--:--</div>
     </header>
@@ -793,9 +795,9 @@ const ICON = {
 const APP_VERSION="v0.152";
 const CONFIG = {
   SUPABASE_URL: "https://xkeowpbbsllfuauifdqb.supabase.co",
-  SUPABASE_ANON_KEY: "REQUIRES_GENERIC_SUPABASE_ANON_KEY",
-  STORE_NAME: "인하대점",
-  DEVICE_ID: "POS_INHA_01",
+  SUPABASE_ANON_KEY: "sb_publishable_aClD6oI0rr-KwanFlRyUTg_GUQKwRw0",
+  STORE_NAME: "선택한 지점",
+  DEVICE_ID: "GENERIC_WEB",
   SHEET_ID: "NO_SHARED_SHEET",  // 구글시트(업무자동화) ID
   DUP_GUARD_SEC: 8,
 };
