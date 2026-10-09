@@ -1,13 +1,16 @@
 import{test,expect}from"@playwright/test";
 test("generic functional deployed UI",async({page})=>{
  await page.goto("http://127.0.0.1:4173/#dashboard");
- await expect(page.locator("#appVersion")).toHaveText("v0.03");
+ await expect(page.locator("#appVersion")).toHaveText("v0.04");
  await expect(page.locator(".hq-store-panel")).toHaveCount(6);
  await page.locator(".hq-store-panel").first().getByRole("button",{name:/상세/}).click();
  await expect(page).toHaveURL(/store=gangnam#pos/);
  await expect(page.locator("#storeTabs a.on")).toHaveText("출퇴근");
  const first=page.locator(".emp").first(); await first.click(); await page.locator("#pinInput").fill("1234"); await page.locator("#pinGo").click();
  await expect(page.locator(".emp").first().locator(".badge-off")).toHaveText("출근 전");
+ const keys=await page.evaluate(()=>Object.keys(localStorage));
+ expect(keys).toContain("franchise_ops:gcova:store:gangnam");
+ expect(keys).not.toContain("franchise_ops:gcova:data");
  await page.getByRole("link",{name:"근무현황"}).click(); await expect(page.locator("#storeTabs a.on")).toHaveText("근무현황"); await expect(page.locator(".calendar")).toBeVisible();
  await page.getByRole("link",{name:"레시피"}).click(); await expect(page.locator("#storeTabs a.on")).toHaveText("레시피"); await expect(page.locator(".recipe-grid article")).toHaveCount(3);
  await page.getByRole("link",{name:"관리"}).click(); await expect(page.locator("#storeTabs a.on")).toHaveText("관리"); await expect(page.getByRole("heading",{name:"직원 관리"})).toBeVisible();
