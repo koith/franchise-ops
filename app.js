@@ -1,10 +1,11 @@
-export const APP_VERSION="v0.03";
+export const APP_VERSION="v0.04";
 export const tenant={id:"gcova",name:"지코바 치킨",stores:[{id:"gangnam",name:"강남점",region:"서울"},{id:"nowon",name:"노원점",region:"서울"},{id:"bupyeong",name:"부평점",region:"인천"},{id:"ingye",name:"수원 인계점",region:"경기"},{id:"seomyeon",name:"부산 서면점",region:"부산"},{id:"dongseong",name:"대구 동성로점",region:"대구"}]};
 const names=["김민준","이서연","박지훈","최유진","정현우","한지민","오세훈","윤수아"];
 const seedStore=(s,si)=>({employees:names.slice(0,5+(si%4)).map((n,i)=>({id:i+1,name:n,pin:"1234",working:i<2,at:i<2?["09:12","10:03"][i]:null,wage:10320,hours:36+i*4})),hours:{open:"11:00",close:"24:00"},sales:1850000+si*213000,inventory:[["순살 닭고기",34,"kg",20],["양념소스",18,"kg",12],["치킨무",42,"팩",30],["콜라 1.25L",16,"병",20]],recipes:[["순살양념구이","순살 닭고기 600g · 양념소스 180g"],["소금구이","순살 닭고기 600g · 소금구이 시즈닝 14g"],["떡사리","떡 180g · 양념소스 35g"]]});
 const KEY=t=>"franchise_ops:"+tenant.id+":"+t;
-function load(){let x;try{x=JSON.parse(localStorage.getItem(KEY("data")))}catch{};if(!x){x={stores:Object.fromEntries(tenant.stores.map((s,i)=>[s.id,seedStore(s,i)]))};save(x)}return x}
-function save(x){localStorage.setItem(KEY("data"),JSON.stringify(x))}
+const STORE_KEY=id=>KEY("store:"+id);
+function load(){let legacy=null;try{legacy=JSON.parse(localStorage.getItem(KEY("data")))}catch{};const stores=Object.fromEntries(tenant.stores.map((s,i)=>{let value=null;try{value=JSON.parse(localStorage.getItem(STORE_KEY(s.id)))}catch{};return [s.id,value||legacy?.stores?.[s.id]||seedStore(s,i)]}));return {stores}}
+function save(x){for(const s of tenant.stores){if(x.stores[s.id])localStorage.setItem(STORE_KEY(s.id),JSON.stringify(x.stores[s.id]))}localStorage.removeItem(KEY("data"))}
 const qs=new URLSearchParams(location.search);let storeId=qs.get("store");let tab=location.hash.slice(1)||"pos";
 const won=n=>Number(n||0).toLocaleString("ko-KR")+"원",esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const brand=document.querySelector("#brandName"),storeName=document.querySelector("#lockedStoreName"),storeCrumb=document.querySelector("#storeCrumb"),nav=document.querySelector("#storeTabs"),view=document.querySelector("#view");
