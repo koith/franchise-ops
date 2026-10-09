@@ -18,5 +18,8 @@ try{
  async function stores(slug){return fetch(base+"/rest/v1/rpc/tenant_store_list",{method:"POST",headers:{apikey:key,Authorization:"Bearer "+access_token,"Content-Type":"application/json"},body:JSON.stringify({p_slug:slug})})}
  const own=await stores("qa-isolation");assert(own.ok,"authorized tenant store listing failed: "+own.status);assert(Array.isArray(await own.json()),"store listing must be an array");
  const other=await stores("sample");assert(!other.ok,"cross-tenant store listing unexpectedly succeeded");
- console.log("PASS authenticated QA tenant listing and cross-tenant denial");
+ async function routedStores(slug){return fetch(base+"/rest/v1/rpc/list_stores",{method:"POST",headers:{apikey:key,Authorization:"Bearer "+access_token,"Content-Type":"application/json","x-tenant-id":slug},body:"{}"})}
+ const routedOwn=await routedStores("qa-isolation");assert(routedOwn.ok,"routed reference list_stores failed: "+routedOwn.status);assert(Array.isArray(await routedOwn.json()),"routed stores must be an array");
+ const routedOther=await routedStores("sample");assert(!routedOther.ok,"cross-tenant routed list_stores unexpectedly succeeded");
+ console.log("PASS authenticated QA tenant and routed listing and cross-tenant denial");
 }finally{await session({action:"cleanup",user_id:account.user_id})}
