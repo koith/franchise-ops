@@ -21,3 +21,12 @@ test("generic functional deployed UI",async({page})=>{
  await page.setViewportSize({width:430,height:932}); await expect(page.locator("body")).toHaveJSProperty("scrollWidth",430);
  await page.screenshot({path:"artifacts/iphone-smoke.png",fullPage:true});
 });
+test("alternative tenant fixture",async({page})=>{
+ const fixture='export const tenant={id:"other",name:"독립 브랜드",stores:[{id:"branch1",name:"1호점",region:"서울"}],fixture:{employeeNames:["직원"],baseWage:11000,baseHours:24,operatingHours:{open:"10:00",close:"21:00"},baseSales:100000,salesStep:0,inventory:[["품목",5,"개",2]],recipes:[["레시피","설명"]]}};';
+ await page.route("**/tenant-config.js",route=>route.fulfill({status:200,contentType:"application/javascript",body:fixture}));
+ await page.goto("http://127.0.0.1:4173/#dashboard");
+ await expect(page.locator("#brandName")).toHaveText("독립 브랜드");
+ await expect(page.locator(".hq-store-panel")).toHaveCount(1);
+ await page.locator(".hq-store-panel button").click();
+ await expect(page).toHaveURL(/store=branch1#pos/);
+});
